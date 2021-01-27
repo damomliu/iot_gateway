@@ -1,7 +1,7 @@
 {
     "data_address": "./address.csv",
     "default_source_port": 502,
-    "default_source_length": 1,
+    "default_source_datatype": "float32",
     "default_source_pointtype": "hr",
 
     "server_host": "127.0.0.1",

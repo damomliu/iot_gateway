@@ -1,6 +1,6 @@
 from typing import List
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-from mirror_source import Source
+from modbus_source import Source
 
 class SyncMirror():
     def __init__(self, src_list:List[Source], logger) -> None:
@@ -40,25 +40,14 @@ class SyncMirror():
         except:
             pass
     
-    @staticmethod
-    def _Valid(req, point_type):
-        if not req.isError():
-            if point_type in ['co', 'di']:
-                return req.bits
-            elif point_type in ['hr', 'ir']:
-                return req.registers
-            else:
-                raise KeyError(f'Invalid point_type: {point_type}')
-    
     def _ReadOne(self, src:Source):
-        c = src.client
-        req = dict(
-            co=c.read_coils,
-            di=c.read_discrete_inputs,
-            hr=c.read_holding_registers,
-            ir=c.read_input_registers,
-        )[src.point_type]
-        src.value = self._Valid(req(src.address, count=src.length, unit=src.slave_id), src.point_type)
+        pointType = src.pointType
+        req,val = pointType.RequestValue(src.client, src.address, count=src.length, unit=src.slave_id)
+        if not req:
+            self.logger.warning(val)
+        else:
+            src.value = val
+
     
     def Read(self):
         for src in self.src_list:

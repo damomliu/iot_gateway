@@ -2,6 +2,7 @@ from pymodbus.server.sync import StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
 import pymodbus.datastore as ds
 
+from modbus_types import PointType, DataType
 import opt
 
 __version__ = '0.0.0'
@@ -12,7 +13,7 @@ class SyncServer:
         self.port = port
         self.logger = logger
         
-        self.context_list_dict = {pt: [0] * 0xFF for pt in opt.POINT_TYPE.keys()}
+        self.context_list_dict = {pt: [0] * 0xFF for pt in PointType.OPTIONS}
         self._Setup()
 
     @property
@@ -21,7 +22,7 @@ class SyncServer:
     def _Setup(self):
         kw = {
             pt: ds.ModbusSequentialDataBlock(0, self.context_list_dict[pt]) 
-            for pt in opt.POINT_TYPE.keys()
+            for pt in PointType.OPTIONS
         }
         store = ds.ModbusSlaveContext(**kw, zero_mode=False)
         self.context = ds.ModbusServerContext(slaves=store, single=True)
