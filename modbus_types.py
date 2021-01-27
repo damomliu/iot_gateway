@@ -82,11 +82,11 @@ class DataType:
 
     def _GetFuncName(self):
         self._func_postfix = None
-        self._add_by_list = False
+        self._add_by_bits = False
 
         if self.type_str in ['bool', 'boolean']:
             self._func_postfix = 'bits'
-            self._add_by_list = True
+            self._add_by_bits = True
         elif self.type_str in ['str', 'string']:
             self._func_postfix = 'string'
         elif self.type_str.startswith('int'):
@@ -141,7 +141,7 @@ class DataType:
         self.builder = BinaryPayloadBuilder(**self._order)
         add_func = getattr(self.builder, self._AddFuncName)
         
-        if self._add_by_list:
+        if self._add_by_bits:
             add_func([val])
         else:
             add_func(val)
@@ -149,7 +149,10 @@ class DataType:
         if self._pType.IsRegister:
             return self.builder.to_registers()
         else:
-            return self.builder.to_coils()
+            if self._add_by_bits:
+                return self.builder.to_coils()[-1]
+            else:
+                return self.builder.to_coils()
 
     def Decode(self, binary):
         if self._pType.IsRegister:
@@ -158,4 +161,8 @@ class DataType:
             self.decoder = BinaryPayloadDecoder.fromCoils(binary, **self._order)
         
         decode_func = getattr(self.decoder, self._DecodeFuncName)
-        return decode_func()
+        val = decode_func()
+        if self._add_by_bits:
+            return val[-1]
+        else:
+            return val
