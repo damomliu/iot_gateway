@@ -1,4 +1,5 @@
 from modbus_types import PointType, DataType
+import opt
 
 
 class Source:
@@ -6,7 +7,7 @@ class Source:
         self.ip = row['SourceIP']
         self.address = int(row['SourceAddress'])
         self.port = row.get('SourcePort', config_dict['default_source_port'])
-        self.slave_id = _get(row, 'SourceSlaveID', 0x00)
+        self.slave_id = _get(row, 'SourceSlaveID', opt.DEFAULT.SOURCE_SLAVE_ID)
         self.desc = row.get('SourceDesc')
 
         point_type_str = _get(row, 'SourcePointType', config_dict['default_source_pointtype'])
@@ -23,7 +24,7 @@ class Source:
         self.value = None
 
     def __repr__(self) -> str:
-        return f'<{self.value}@{self.ip}/{self.address}:{self.target_address}>'
+        return f'<{__class__.__name__} {self.value}@{self.ip}/{self.pointType.type_str}_{self.address}:{self.target_address}>'
     
     @property
     def length(self): return self.dataType.length

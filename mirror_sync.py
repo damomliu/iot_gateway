@@ -44,7 +44,7 @@ class SyncMirror():
         pointType = src.pointType
         req,val = pointType.RequestValue(src.client, src.address, count=src.length, unit=src.slave_id)
         if not req:
-            self.logger.warning(val)
+            self.logger.warning(f'Exception code [{val}] / src: {src}')
         else:
             src.value = val
 
