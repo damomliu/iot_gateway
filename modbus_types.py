@@ -58,6 +58,19 @@ class PointType:
 
         else:
             return 0,req
+    
+    def _WriteFunc(self, client, values):
+        req1 = dict(
+            co=client.write_coil,
+            hr=client.write_register,
+        )
+        req = dict(
+            co=client.write_coils,
+            hr=client.write_registers,
+        )
+        # req = req1 if len(values) == 1 else req2
+        return req[self.type_str]
+    
 
 _DEFAULT_BYTE_ORDER = '>'
 _DEFAULT_WORD_ORDER = '>'

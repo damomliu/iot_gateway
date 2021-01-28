@@ -3,6 +3,7 @@ from pymodbus.device import ModbusDeviceIdentification
 import pymodbus.datastore as ds
 
 from modbus_types import PointType, DataType
+from modbus_source import LinkedSlaveContext
 import opt
 
 __version__ = '0.0.0'
@@ -13,14 +14,12 @@ class SyncServer:
         self.port = port
         self.logger = logger
         
-        self._Setup()
-
     @property
     def address_tuple(self): return (self.host, self.port)
 
-    def _Setup(self):
+    def Setup(self, mirror):
         kw = {pt: ds.ModbusSequentialDataBlock.create() for pt in PointType.OPTIONS}
-        store = ds.ModbusSlaveContext(**kw, zero_mode=False)
+        store = LinkedSlaveContext(mirror, **kw, zero_mode=False)
         self.context = ds.ModbusServerContext(slaves=store, single=True)
 
         self.identity = ModbusDeviceIdentification()

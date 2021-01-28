@@ -1,5 +1,5 @@
 ﻿SourceIP,SourceAddress,SourcePointType,SourceDataType,SourceDesc,TargetAddress,TargetDesc
-192.168.4.150,100,co,bool,CO,0,for Testing
+192.168.4.150,100,co,bool,CO,1,for Testing
 192.168.4.150,101,co,bool,,101,
 192.168.4.150,100,di,bool,,102,
 192.168.4.150,101,di,bool,,103,

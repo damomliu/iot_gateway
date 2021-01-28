@@ -27,6 +27,7 @@ class ModbusController:
             port=self.config_dict['server_port'],
             logger=self.logger,
         )
+        self.server.Setup(self.mirror)
 
     def _SetLogger(self, logger):
         if logger is None:
@@ -55,8 +56,8 @@ class ModbusController:
 
         return src_list
 
-    def Start(self):
-        thread = Thread(target=self.UpdateLoop, args=(3, 0.5))
+    def Start(self, delay, refresh_sec):
+        thread = Thread(target=self.UpdateLoop, args=(delay, refresh_sec))
         thread.start()
 
         try:
@@ -79,10 +80,11 @@ class ModbusController:
 
             self.server.context[0x00].setValues(
                 fx=src.pointType.fx,
-                address=src.target_address_from0 + 1,
+                address=src.target_address_from0,
                 values=src.value,
+                writeback=False,
             )
 
 if __name__ == "__main__":
     ctrl = ModbusController('./config.json', mirror_mode='sync', server_mode='sync')
-    ctrl.Start()
+    ctrl.Start(1, 0.5)
