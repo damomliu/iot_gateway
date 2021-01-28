@@ -1,5 +1,3 @@
-import pymodbus.datastore as ds
-
 from modbus_types import PointType, DataType
 import opt
 
@@ -42,14 +40,3 @@ def _get(_dict, key, val_if_none):
         return _dict.get(key)
     else:
         return val_if_none
-
-
-class LinkedSlaveContext(ds.ModbusSlaveContext):
-    def __init__(self, mirror, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.mirror = mirror
-
-    def setValues(self, fx, address, values, writeback=True):
-        super().setValues(fx, address, values)
-        if writeback:
-            self.mirror.Writeback(fx, address, values)

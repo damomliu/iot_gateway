@@ -3,7 +3,7 @@ from pymodbus.device import ModbusDeviceIdentification
 import pymodbus.datastore as ds
 
 from modbus_types import PointType, DataType
-from modbus_source import LinkedSlaveContext
+from modbus_context import LinkedSlaveContext
 import opt
 
 __version__ = '0.0.0'
