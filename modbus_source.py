@@ -33,6 +33,26 @@ class Source:
     def address_from0(self): return self._address - self._addr_start_from
     @property
     def target_address_from0(self): return self._target_address - self._addr_start_from
+    
+    def Read(self):
+        req,val = self.pointType.RequestValue(self.client, self.address_from0, count=self.length, unit=self.slave_id)
+        if req: self.value = val[:self.length]
+        return req,val
+    
+    def Write(self, values):
+        writeFunc = self.pointType._WriteFunc(self.client, values)
+        req = writeFunc(self.address_from0, values)
+        if not req.isError():
+            self.value = values
+            return 1,req
+        else:
+            return 0,req
+
+
+class JsonSource:
+    def __init__(self, row, config_dict):
+        super().__init__(row, config_dict)
+
 
 
 def _get(_dict, key, val_if_none):

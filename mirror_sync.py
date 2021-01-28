@@ -40,40 +40,30 @@ class SyncMirror():
         except:
             pass
     
-    def _ReadOne(self, src:Source):
-        pointType = src.pointType
-        req,val = pointType.RequestValue(src.client, src.address_from0, count=src.length, unit=src.slave_id)
-        if not req:
-            self.logger.error(f'Read failed {src} {val}')
-        else:
-            src.value = val[:src.length]
-    
     def Read(self):
         for src in self.src_list:
-            self._ReadOne(src)
+            req,val = src.Read()
+            if not req:
+                self.logger.error(f'Read failed {src} {val}')
+            
     
     def Writeback(self, fx, address, values):
         matched_src_list = self._MatchSource(fx, address)
         if len(matched_src_list) == 1:
             src = matched_src_list[0]
             if src.length == len(values):
-                self._WritebackOne(src, values)
+                original_value = src.value
+                req = src.Write(values)
+                if req:
+                    self.logger.info(f'Writeback success for {src} : {original_value} -> {src.value}')
+                else:
+                    self.logger.error(f'Writeback failed. {src} {req}')
             else:
                 self.logger.warning(f'Unmatched data length: {len(values)} / from source_list: {src.length}')
         elif len(matched_src_list) > 1:
             self.logger.warning('\n'.join([f'Duplicated sources of fx={fx} address={address}', *(str(src) for src in matched_src_list)]))
         else:
             self.logger.warning(f'No matched source of fx={fx} address={address}')
-    
-    def _WritebackOne(self, src:Source, values):
-        writeFunc = src.pointType._WriteFunc(src.client, values)
-        req = writeFunc(src.address_from0, values)
-        if not req.isError():
-            original_value = src.value
-            src.value = values
-            self.logger.info(f'Writeback success for {src} : {original_value} -> {src.value}')
-        else:
-            self.logger.error(f'Writeback failed. {src} {req}')
     
     def _MatchSource(self, fx, address):
         matched_list = []
