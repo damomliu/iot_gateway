@@ -1,9 +1,9 @@
 from typing import List
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-from modbus_source import Source
+from modbus_source import TcpSource
 
 class SyncMirror():
-    def __init__(self, src_list:List[Source], logger) -> None:
+    def __init__(self, src_list:List[TcpSource], logger) -> None:
         self.src_list = src_list
         self.logger = logger
         self._SetClient()
@@ -13,7 +13,7 @@ class SyncMirror():
             if not src.client:
                 src.client = ModbusClient(src.ip, src.port)
     
-    def _ConnectOne(self, src:Source):
+    def _ConnectOne(self, src:TcpSource):
         if src.client.connect():
             src.is_connected = True
             self.logger.debug(f'connected to {src} OK')

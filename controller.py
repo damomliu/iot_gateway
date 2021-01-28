@@ -5,7 +5,7 @@ import time
 from threading import Thread
 
 import factory
-from modbus_source import Source
+from modbus_source import TcpSource
 
 
 class ModbusController:
@@ -49,7 +49,7 @@ class ModbusController:
                     continue
 
                 try:
-                    src_list.append(Source(r, self.config_dict))
+                    src_list.append(TcpSource(r, self.config_dict))
                 except Exception as e:
                     self.logger.warning(f'Invalid source: {r}')
 
