@@ -13,17 +13,13 @@ class SyncServer:
         self.port = port
         self.logger = logger
         
-        self.context_list_dict = {pt: [0] * 0xFF for pt in PointType.OPTIONS}
         self._Setup()
 
     @property
-    def address_tp(self): return (self.host, self.port)
+    def address_tuple(self): return (self.host, self.port)
 
     def _Setup(self):
-        kw = {
-            pt: ds.ModbusSequentialDataBlock(0, self.context_list_dict[pt]) 
-            for pt in PointType.OPTIONS
-        }
+        kw = {pt: ds.ModbusSequentialDataBlock.create() for pt in PointType.OPTIONS}
         store = ds.ModbusSlaveContext(**kw, zero_mode=False)
         self.context = ds.ModbusServerContext(slaves=store, single=True)
 
@@ -37,5 +33,5 @@ class SyncServer:
         StartTcpServer(
             self.context,
             identity=self.identity,
-            address=self.address_tp,
+            address=self.address_tuple,
         )

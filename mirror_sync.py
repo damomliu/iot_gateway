@@ -42,11 +42,11 @@ class SyncMirror():
     
     def _ReadOne(self, src:Source):
         pointType = src.pointType
-        req,val = pointType.RequestValue(src.client, src.address, count=src.length, unit=src.slave_id)
+        req,val = pointType.RequestValue(src.client, src.address_from0, count=src.length, unit=src.slave_id)
         if not req:
-            self.logger.warning(f'Exception code [{val}] / src: {src}')
+            self.logger.warning(f'{src} {val}')
         else:
-            src.value = val
+            src.value = val[:src.length]
 
     
     def Read(self):

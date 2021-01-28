@@ -42,7 +42,16 @@ class ModbusController:
 
     def _GetSrcList(self):
         with open(self.config_dict['data_address'], 'r', encoding='utf-8-sig') as f:
-            src_list = list(Source(r, self.config_dict) for r in csv.DictReader(f))
+            src_list = []
+            for r in csv.DictReader(f):
+                if not r.get('SourceIP'):
+                    continue
+
+                try:
+                    src_list.append(Source(r, self.config_dict))
+                except Exception as e:
+                    self.logger.warning(f'Invalid source: {r}')
+
 
         return src_list
 
@@ -68,9 +77,9 @@ class ModbusController:
         for src in self.mirror.src_list:
             if src.value is None: continue
 
-            self.server.context[src.slave_id].setValues(
+            self.server.context[0x00].setValues(
                 fx=src.pointType.fx,
-                address=src.target_address,
+                address=src.target_address_from0 + 1,
                 values=src.value,
             )
 

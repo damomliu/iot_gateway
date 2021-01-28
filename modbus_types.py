@@ -57,7 +57,7 @@ class PointType:
                 return 1,req.registers
 
         else:
-            return 0,req.exception_code
+            return 0,req
 
 _DEFAULT_BYTE_ORDER = '>'
 _DEFAULT_WORD_ORDER = '>'

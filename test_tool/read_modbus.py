@@ -16,6 +16,8 @@ def read(*point_addr_data_list, ip=None, port=None):
         req,vals = pt.RequestValue(client, addr, count=data.length)
         if req:
             val_list.append(data.Decode(vals))
+        else:
+            print(vals)
 
     client.close()
     return val_list
@@ -23,7 +25,7 @@ def read(*point_addr_data_list, ip=None, port=None):
 @click.command()
 @click.argument('intval', nargs=1, type=float, default=1)
 @click.argument('point', nargs=-1)
-@click.option('--ip', type=str)
+@click.option('--ip', type=str, default='127.0.0.1')
 @click.option('--port', type=int, default=502)
 def read_loop(point, intval, ip, port):
     pts = [PointType(pt) for pt in point[::2]]
@@ -42,7 +44,7 @@ def read_loop(point, intval, ip, port):
     while True:
         try:
             val_list = read(*zip(pts, addrs, data_list), ip=ip, port=port)
-            info_str = ip + ' '.join(f'[{pt}_{addr}:{data.type_str}]{val}'.ljust(15) for pt,addr,data,val in zip(pts, addrs, data_list, val_list))
+            info_str = f'{ip}:{port} ' + ' '.join(f'[{pt}_{addr}:{data.type_str}]{val}'.ljust(15) for pt,addr,data,val in zip(pts, addrs, data_list, val_list))
             print(info_str)
             time.sleep(intval)
         except ConnectionException:
