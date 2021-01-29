@@ -4,6 +4,9 @@
     "default_source_datatype": "float32",
     "default_source_pointtype": "hr",
 
+    "contract_folder": "./.contract/",
+    "default_contract_datatype": "float32",
+
     "address_start_from_1": true,
 
     "server_host": "127.0.0.1",

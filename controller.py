@@ -1,11 +1,12 @@
+from pathlib import Path
 import json
 import csv
-from logger import OneLogger
 import time
 from threading import Thread
+from logger import OneLogger
 
 import factory
-from modbus_source import TcpSource
+from modbus_source import JsonSource, TcpSource
 
 
 class ModbusController:
@@ -17,6 +18,7 @@ class ModbusController:
     ):
         self._SetLogger(logger)
         self._GetConfig(config_path)
+        self._SetupJsonSource()
 
         self.mirror = factory.MIRROR[mirror_mode](
             src_list=self._GetSrcList(),
@@ -42,8 +44,8 @@ class ModbusController:
             self.config_dict = json.load(f)
 
     def _GetSrcList(self):
+        src_list = []
         with open(self.config_dict['data_address'], 'r', encoding='utf-8-sig') as f:
-            src_list = []
             for r in csv.DictReader(f):
                 if not r.get('SourceIP'):
                     continue
@@ -52,9 +54,16 @@ class ModbusController:
                     src_list.append(TcpSource(r, self.config_dict))
                 except Exception as e:
                     self.logger.warning(f'Invalid source: {r}')
-
+        
+        for fpath in Path(self.config_dict['contract_folder']).glob('*.json'):
+            src_list.append(JsonSource.FromFile(fpath))
 
         return src_list
+    
+    def _SetupJsonSource(self):
+        JsonSource.default_datatype_str = self.config_dict['default_contract_datatype']
+        JsonSource.default_addr_start_from = int(self.config_dict['address_start_from_1'])
+        JsonSource.default_folder = Path(self.config_dict['contract_folder'])
 
     def Start(self, delay, refresh_sec):
         thread = Thread(target=self.UpdateLoop, args=(delay, refresh_sec))

@@ -4,8 +4,8 @@ import click
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 
 
-def write(*point_addr_value_list):
-    client = ModbusClient('192.168.4.150', port=502)
+def write(*point_addr_value_list, ip='127.0.0.1', port=502):
+    client = ModbusClient(ip, port=port)
     client.connect()
     
     for pt,addr,val in point_addr_value_list:
@@ -22,10 +22,12 @@ def write(*point_addr_value_list):
 @click.argument('btm', type=int, default=0)
 @click.argument('top', type=int, default=1)
 @click.argument('intval', type=float, default=1)
-def random_loop(point, addr, btm, top, intval):
-    while True:
+@click.option('--ip', type=str, default='127.0.0.1')
+@click.option('--port', type=int, default=502)
+def random_loop(point, addr, btm, top, intval, ip, port):
+    # while True:
         newval = random.randint(btm, top)
-        write((point, addr, newval))
+        write((point, addr, newval), ip=ip, port=port)
         time.sleep(intval)
 
 if __name__ == "__main__":
