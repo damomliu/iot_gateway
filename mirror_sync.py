@@ -82,14 +82,7 @@ class SyncMirror():
     def _MatchSourceList(self, fx, address):
         matched_list = []
         for src in self.src_list:
-            if isinstance(src, TcpSource):
-                src_target_address = src.target_address_from0
-            elif isinstance(src, JsonSource):
-                src_target_address = src._target_address
-            else:
-                raise NotImplementedError(f'source type {type(src)}')
-
-            if address == src_target_address:
+            if address == src.target_address:
                 matched_list.append(src)
 
         return matched_list

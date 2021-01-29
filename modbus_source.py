@@ -18,9 +18,11 @@ class SourceBase:
     def target_address_from0(self): return self._target_address - self._addr_start_from
 
     @property
-    def address_from0(self): raise NotImplemented
-    def Read(self): raise NotImplemented
-    def Write(self, values): raise NotImplemented
+    def address_from0(self): raise NotImplementedError
+    @property
+    def target_address(self): raise NotImplementedError
+    def Read(self): raise NotImplementedError
+    def Write(self, values): raise NotImplementedError
 
 class TcpSource(SourceBase):
     def __init__(self, row, config_dict):
@@ -46,6 +48,8 @@ class TcpSource(SourceBase):
 
     @property
     def address_from0(self): return self._address - self._addr_start_from
+    @property
+    def target_address(self): return self.target_address_from0
 
     def Read(self):
         req,val = self.pointType.RequestValue(self.client, self.address_from0, count=self.length, unit=self.slave_id)
@@ -74,6 +78,9 @@ class JsonSource(SourceBase):
 
     def __repr__(self) -> str:
         return f'<{__class__.__name__} {self.dataType.type_str}/{self.pointType.type_str}:{self._target_address}>'
+    
+    @property
+    def target_address(self): return self._target_address
 
     @classmethod
     def FromFile(cls, filepath):

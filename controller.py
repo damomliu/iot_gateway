@@ -89,7 +89,7 @@ class ModbusController:
 
             self.server.context[0x00].setValues(
                 fx=src.pointType.fx,
-                address=src.target_address_from0,
+                address=src.target_address,
                 values=src.value,
                 writeback=False,
             )
