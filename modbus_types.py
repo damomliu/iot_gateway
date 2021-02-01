@@ -14,15 +14,19 @@ class PointType:
     def _SetValue(self):
         if self.type_str == 'co':
             self.fx = 1
+            self.write_fx = [5, 15]
             self.desc = 'Coil'
         elif self.type_str == 'di':
             self.fx = 2
+            self.write_fx = []
             self.desc = 'Discrete Input'
         elif self.type_str == 'hr':
             self.fx = 3
+            self.write_fx = [6, 16]
             self.desc = 'Holding Register'
         elif self.type_str == 'ir':
             self.fx = 4
+            self.write_fx = []
             self.desc = 'Input Register'
 
         for attr in [self.fx, self.desc]:

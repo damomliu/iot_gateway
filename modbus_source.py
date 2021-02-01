@@ -53,7 +53,7 @@ class TcpSource(SourceBase):
         return req,val
 
     def Write(self, values):
-        writeFunc = self.pointType._WriteFunc(self.client, values)
+        writeFunc = self.pointType._WriteFunc(self.client)
         req = writeFunc(self.address_from0, values)
         if not req.isError():
             self.value = values

@@ -60,7 +60,7 @@ class SyncMirror():
     def _MatchSourceList(self, fx, address):
         matched_list = []
         for src in self.src_list:
-            if address == src.target_address_from0:
+            if address == src.target_address_from0 and fx in src.pointType.write_fx:
                 matched_list.append(src)
 
         return matched_list
