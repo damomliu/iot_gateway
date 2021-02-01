@@ -1,13 +1,23 @@
 from typing import List
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+from mirror_sources import MirrorSourceList
 from modbus_source import JsonSource, TcpSource
 
 class SyncMirror():
-    def __init__(self, src_list:List[TcpSource], logger) -> None:
-        self.src_list = src_list
+    def __init__(self, src_list, logger) -> None:
         self.logger = logger
+        self.src_list = MirrorSourceList(mirror=self)
+        for src in src_list:
+            self.src_list.append(src)
         self._SetClient()
-        
+    
+    def _Validate(self, new_src):
+        for src in self.src_list:
+            if src.pointType.type_str != new_src.pointType.type_str: continue
+            if src.target_address_set.intersection(new_src.target_address_set):
+                self.logger.warning(f'Address conflict!! src={src} / new_src={new_src}')
+                return -1
+    
     def _SetClient(self):
         for src in self.src_list:
             if isinstance(src, TcpSource):
