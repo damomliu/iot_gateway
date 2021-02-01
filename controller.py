@@ -95,12 +95,12 @@ class ModbusController:
 
     def WriteContext(self):
         for src in self.mirror.src_list:
-            if src.value is None: continue
+            if src.values is None: continue
 
             self.server.context[0x00].setValues(
                 fx=src.pointType.fx,
                 address=src.target_address_from0,
-                values=src.value,
+                values=src.values,
                 writeback=False,
             )
     
@@ -109,10 +109,10 @@ class ModbusController:
         if len(matched_src_list) == 1:
             src = matched_src_list[0]
             if src.length == len(values):
-                original_value = src.value
+                original_val = src.values
                 req,err = src.Write(values)
                 if req:
-                    self.logger.info(f'Writeback success for {src} : {original_value} -> {src.value}')
+                    self.logger.info(f'Writeback success for {src} : {original_val} -> {src.values}')
                 else:
                     self.logger.error(f'Writeback failed. {src} {err}')
             else:

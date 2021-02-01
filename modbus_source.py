@@ -39,7 +39,7 @@ class TcpSource(SourceBase):
 
         self.client = None
         self.is_connected = False
-        self.value = None
+        self.values = None
 
     def __repr__(self) -> str:
         return f'<{__class__.__name__} {self.dataType.type_str}@{self.ip}/{self.pointType.type_str}_{self._address}:{self._target_address}>'
@@ -49,14 +49,14 @@ class TcpSource(SourceBase):
 
     def Read(self):
         req,val = self.pointType.RequestValue(self.client, self.address_from0, count=self.length, unit=self.slave_id)
-        if req: self.value = val[:self.length]
+        if req: self.values = val[:self.length]
         return req,val
 
     def Write(self, values):
         writeFunc = self.pointType._WriteFunc(self.client)
         req = writeFunc(self.address_from0, values)
         if not req.isError():
-            self.value = values
+            self.values = values
             return 1,req
         else:
             return 0,req
@@ -69,7 +69,7 @@ class JsonSource(SourceBase):
 
     def __init__(self, filepath:Path, address, point_type_str, data_type_str, addr_start_from, val=None):
         super().__init__(address, point_type_str, data_type_str, addr_start_from=addr_start_from)
-        self.value = val
+        self.values = val
         self.filepath = filepath
 
     def __repr__(self) -> str:
@@ -123,7 +123,7 @@ class JsonSource(SourceBase):
             point_type_str=self.pointType.type_str,
             data_type_str=self.dataType.type_str,
             addr_start_from=self._addr_start_from,
-            val=self.value,
+            val=self.values,
         )
 
     def Read(self):
@@ -138,18 +138,18 @@ class JsonSource(SourceBase):
             
             self._target_address = _dict['address']
             self._addr_start_from = _dict['addr_start_from']
-            self.value = _dict['val']
+            self.values = _dict['val']
             
-            return 1,self.value
+            return 1,self.values
         except Exception as e:
             return 0,e
 
     def Write(self, values=None):
         if values is None:
-            if self.value is None: raise RuntimeError(f'No values to be written: {self}')
-            values = self.value
+            if self.values is None: raise RuntimeError(f'No values to be written: {self}')
+            values = self.values
         else:
-            self.value = values
+            self.values = values
         
         try:
             if not self.filepath.parent.is_dir(): self.filepath.parent.mkdir()
