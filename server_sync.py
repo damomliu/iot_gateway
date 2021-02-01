@@ -17,9 +17,9 @@ class SyncServer:
     @property
     def address_tuple(self): return (self.host, self.port)
 
-    def Setup(self, mirror):
+    def Setup(self, ctrl):
         kw = {pt: ds.ModbusSequentialDataBlock.create() for pt in PointType.OPTIONS}
-        store = LinkedSlaveContext(mirror, **kw, zero_mode=False)
+        store = LinkedSlaveContext(ctrl, **kw, zero_mode=False)
         self.context = ds.ModbusServerContext(slaves=store, single=True)
 
         self.identity = ModbusDeviceIdentification()

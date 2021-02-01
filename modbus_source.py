@@ -27,9 +27,9 @@ class SourceBase:
 class TcpSource(SourceBase):
     def __init__(self, row, config_dict):
         address = int(row['TargetAddress'])
-        point_type_str = _get(row, 'SourcePointType', config_dict['default_source_pointtype'])
-        data_type_str = _get(row, 'SourceDataType', config_dict['default_source_datatype'])
-        addr_start_from = int(config_dict['address_start_from_1'])
+        point_type_str = _get(row, 'PointType', config_dict['default_pointtype'])
+        data_type_str = _get(row, 'DataType', config_dict['default_datatype'])
+        addr_start_from = config_dict['address_start_from']
         super().__init__(address, point_type_str, data_type_str, addr_start_from)
 
         self.ip = row['SourceIP']
@@ -83,6 +83,15 @@ class JsonSource(SourceBase):
     def target_address(self): return self._target_address
 
     @classmethod
+    def FromDict(cls, row, config_dict):
+        address = int(row['TargetAddress'])
+        point_type_str = _get(row, 'PointType', config_dict['default_pointtype'])
+        data_type_str = _get(row, 'DataType', config_dict['default_datatype'])
+        addr_start_from = config_dict.get('address_start_from', 1)
+        filepath = __class__.default_folder / f'{point_type_str}_{address:05d}.json'
+        return cls(filepath, address, point_type_str, data_type_str, addr_start_from)
+
+    @classmethod
     def FromFile(cls, filepath):
         with open(filepath, 'r') as f:
             _dict = json.load(f)
@@ -132,7 +141,7 @@ class JsonSource(SourceBase):
             if self.pointType.type_str != _dict['point_type_str']:
                 self.pointType = PointType(_dict['point_type_str'])
             if self.dataType.type_str != _dict['data_type_str']:
-                raise NotImplementedError('DataType changed')
+                raise Exception('Datatype Change')
             
             self._target_address = _dict['address']
             self._addr_start_from = _dict['addr_start_from']

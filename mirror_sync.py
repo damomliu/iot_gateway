@@ -14,7 +14,7 @@ class SyncMirror():
                 if not src.client:
                     src.client = ModbusClient(src.ip, src.port)
     
-    def _ConnectOne(self, src:TcpSource):
+    def _ConnectOne(self, src):
         if isinstance(src, TcpSource):
             if src.client.connect():
                 src.is_connected = True
@@ -23,6 +23,9 @@ class SyncMirror():
                 return False
         
         elif isinstance(src, JsonSource):
+            if not src.filepath.exists():
+                self.logger.info(f'...created {src}')
+                src.Write([0] * src.length)
             req,_ = src.Read()
             return req
     
@@ -54,35 +57,10 @@ class SyncMirror():
             if not req:
                 self.logger.error(f'Read failed {src} {val}')
             
-    def Writeback(self, fx, address, values):
-        matched_src_list = self._MatchSourceList(fx, address)
-        if len(matched_src_list) == 1:
-            src = matched_src_list[0]
-            if src.length == len(values):
-                original_value = src.value
-                req = src.Write(values)
-                if req:
-                    self.logger.info(f'Writeback success for {src} : {original_value} -> {src.value}')
-                else:
-                    self.logger.error(f'Writeback failed. {src} {req}')
-            else:
-                self.logger.warning(f'Unmatched data length: {len(values)} / from source_list: {src.length}')
-        elif len(matched_src_list) > 1:
-            self.logger.warning('\n'.join([f'Duplicated sources of fx={fx} address={address}', *(str(src) for src in matched_src_list)]))
-        else:
-            # self.logger.warning(f'No matched source of fx={fx} address={address}')
-            src = JsonSource.FromFx(fx, address, values)
-            req,_ = src.Write()
-            if req:
-                self.src_list.append(src)
-                self.logger.info(f'New source created {src} val={values}')
-            else:
-                self.logger.error(f'Failed to create JsonSource {src}')
-    
     def _MatchSourceList(self, fx, address):
         matched_list = []
         for src in self.src_list:
-            if address == src.target_address:
+            if address == src.target_address_from0:
                 matched_list.append(src)
 
         return matched_list
