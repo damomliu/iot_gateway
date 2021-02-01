@@ -64,6 +64,7 @@ class TcpSource(SourceBase):
 
     def Write(self, values):
         writeFunc = self.pointType._WriteFunc(self.client)
+        values = values[:self.length]
         req = writeFunc(self.address_from0, values)
         if not req.isError():
             self.values = values
@@ -159,7 +160,7 @@ class JsonSource(SourceBase):
             if self.values is None: raise RuntimeError(f'No values to be written: {self}')
             values = self.values
         else:
-            self.values = values
+            self.values = values[:self.length]
         
         try:
             if not self.filepath.parent.is_dir(): self.filepath.parent.mkdir()

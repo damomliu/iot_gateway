@@ -74,3 +74,45 @@ class SyncMirror():
                 matched_list.append(src)
 
         return matched_list
+
+    def _WriteRequestList(self, fx, address, values, req_list=None):
+        if req_list is None: req_list = []
+        matched_src_list = self._MatchSourceList(fx, address)
+        if len(matched_src_list) == 1:
+            src = matched_src_list[0]
+            req_list.append(src)
+            if len(values) <= src.length:
+                return req_list
+            else:
+                address += src.length
+                values = values[src.length:]
+                return self._WriteRequestList(fx, address, values, req_list=req_list)
+        
+        elif len(matched_src_list) > 1:
+            self.logger.warning('\n'.join([f'Duplicated sources of fx={fx} address={address}', *(str(src) for src in matched_src_list)]))
+            return req_list
+        else:
+            self.logger.warning(f'No matched source of fx={fx} address={address}')
+            # src = JsonSource.FromFx(fx, address, values)
+            # req,_ = src.Write()
+            # if req:
+            #     self.src_list.append(src)
+            #     self.logger.info(f'New source created {src} val={values}')
+            # else:
+            #     self.logger.error(f'Failed to create JsonSource {src}')
+            return req_list
+    
+    def Write(self, fx, address, values):
+        req_list = self._WriteRequestList(fx, address, values)
+        for src in req_list:
+            original_val = src.values
+            req,err = src.Write(values[:src.length])
+            if req:
+                self.logger.info(f'Writeback success for {src} : {original_val} -> {src.values}')
+
+                values = values[src.length:]
+                address += src.length
+            else:
+                self.logger.error(f'Writeback failed. {src} {err}')
+                return 0
+    

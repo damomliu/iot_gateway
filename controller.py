@@ -105,29 +105,8 @@ class ModbusController:
             )
     
     def WriteMirror(self, fx, address, values):
-        matched_src_list = self.mirror._MatchSourceList(fx, address)
-        if len(matched_src_list) == 1:
-            src = matched_src_list[0]
-            if src.length == len(values):
-                original_val = src.values
-                req,err = src.Write(values)
-                if req:
-                    self.logger.info(f'Writeback success for {src} : {original_val} -> {src.values}')
-                else:
-                    self.logger.error(f'Writeback failed. {src} {err}')
-            else:
-                self.logger.warning(f'Unmatched data length: {len(values)} / from source_list: {src.length}')
-        elif len(matched_src_list) > 1:
-            self.logger.warning('\n'.join([f'Duplicated sources of fx={fx} address={address}', *(str(src) for src in matched_src_list)]))
-        else:
-            self.logger.warning(f'No matched source of fx={fx} address={address}')
-            # src = JsonSource.FromFx(fx, address, values)
-            # req,_ = src.Write()
-            # if req:
-            #     self.src_list.append(src)
-            #     self.logger.info(f'New source created {src} val={values}')
-            # else:
-            #     self.logger.error(f'Failed to create JsonSource {src}')
+        self.mirror.Write(fx, address, values)
+
 
 if __name__ == "__main__":
     ctrl = ModbusController('./config.json', mirror_mode='sync', server_mode='sync')
