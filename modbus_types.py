@@ -58,7 +58,7 @@ class PointType:
         else:
             return 0,req
     
-    def _WriteFunc(self, client, values):
+    def _WriteFunc(self, client):
         req = dict(
             co=client.write_coils,
             hr=client.write_registers,
