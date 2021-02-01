@@ -18,14 +18,8 @@ class SourceBase:
     def target_address_from0(self): return self._target_address - self._addr_start_from
     @property
     def target_address_set(self):
-        length = self.length
-        addr = self.target_address_from0
-        _set = set()
-        while length:
-            _set.add(addr)
-            addr += 1
-            length -= 1
-        return _set
+        _range = range(self.target_address_from0, self.target_address_from0 + self.length)
+        return set(list(_range))
 
     @property
     def address_from0(self): raise NotImplementedError
