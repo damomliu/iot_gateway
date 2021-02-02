@@ -3,7 +3,7 @@ import click
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.exceptions import ConnectionException
 
-from modbus_types import PointType, DataType
+from source import PointType, DataType
 
 
 def read(*point_addr_data_list, ip=None, port=None):

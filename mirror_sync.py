@@ -32,7 +32,7 @@ class SyncMirror():
                 else:
                     self.logger.debug(f'connected to {src} OK')
             else:
-                self.logger.warning(f'...not connected : {src}')
+                self.logger.warning(f'...not connected : {src} / {info}')
                 self.src_list.remove(src)
 
         self.logger.info(f'Mirroring from [{len(self.src_list)}] sources')

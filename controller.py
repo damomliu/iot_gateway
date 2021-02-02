@@ -55,7 +55,9 @@ class ModbusController:
                         # add TcpSource
                         src_list.append(TcpSource(r, self.config_dict))
                     
-                    elif r.get('TargetWritable') == '*':
+                    elif r.get('TargetWritable') == '*' \
+                    and not r.get('SourceIP') \
+                    and not r.get('SourceAddress'):
                         # add JsonSource
                         src_list.append(JsonSource.FromDict(r, self.config_dict))
                     

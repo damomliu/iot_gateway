@@ -2,7 +2,7 @@ import time
 import random
 import click
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-from modbus_types import PointType, DataType
+from source import PointType, DataType
 
 
 def write(*point_addr_value_list, ip='127.0.0.1', port=502):
@@ -22,6 +22,7 @@ def write(*point_addr_value_list, ip='127.0.0.1', port=502):
         writeFunc = pt._WriteFunc(client)
         req = writeFunc(addr, dt.Encode(val))
         print(not req.isError())
+        print(req)
 
     client.close()
 

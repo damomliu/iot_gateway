@@ -20,6 +20,8 @@ class TcpSource(SourceBase):
         self.desc = row.get('SourceDesc')
         self._address = int(row['SourceAddress'])
         self.target_desc = row.get('TargetDesc')
+        
+        self.writable = row.get('TargetWritable') == '*'
 
         self.client = None
         self.is_connected = False
@@ -47,11 +49,14 @@ class TcpSource(SourceBase):
             return 0,val
 
     def Write(self, values):
-        writeFunc = self.pointType._WriteFunc(self.client)
-        values = values[:self.length]
-        req = writeFunc(self.address_from0, values)
-        if not req.isError():
-            self.values = values
-            return 1,None
+        if self.writable:
+            writeFunc = self.pointType._WriteFunc(self.client)
+            values = values[:self.length]
+            req = writeFunc(self.address_from0, values)
+            if not req.isError():
+                self.values = values
+                return 1,None
+            else:
+                return 0,req
         else:
-            return 0,req
+            return 0,Exception('TargetNotWriable')

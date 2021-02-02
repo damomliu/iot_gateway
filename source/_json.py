@@ -83,6 +83,8 @@ class JsonSource(SourceBase):
         rres,rinfo = self.Read()
         res_list.append(rres)
         if rinfo: info_list.append(str(rinfo))
+        info_list.append(f'val={self.dataType.Decode(self.values)}')
+        
         return all(res_list), info_list
 
     def Read(self):
