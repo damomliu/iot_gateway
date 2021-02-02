@@ -1,7 +1,6 @@
 from typing import List
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-from mirror_sources import MirrorSourceList
-from modbus_source import JsonSource, TcpSource
+from source import MirrorSourceList, JsonSource, TcpSource
 
 class SyncMirror():
     def __init__(self, src_list, logger) -> None:
@@ -24,24 +23,9 @@ class SyncMirror():
                 if not src.client:
                     src.client = ModbusClient(src.ip, src.port)
 
-    def _ConnectOne(self, src):
-        if isinstance(src, TcpSource):
-            if src.client.connect():
-                src.is_connected = True
-                return True
-            else:
-                return False
-
-        elif isinstance(src, JsonSource):
-            if not src.filepath.exists():
-                self.logger.info(f'...created {src}')
-                src.Write([0] * src.length)
-            req,_ = src.Read()
-            return req
-
     def Connect(self):
         for src in self.src_list[:]:
-            if not self._ConnectOne(src):
+            if not src.Connect():
                 self.logger.warning(f'...not connected : {src}')
                 self.src_list.remove(src)
             else:

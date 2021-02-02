@@ -6,7 +6,7 @@ from threading import Thread
 from logger import OneLogger
 
 import factory
-from modbus_source import JsonSource, TcpSource
+from source import JsonSource, TcpSource
 
 _ADDRESS_START_FROM = 1
 class ModbusController:

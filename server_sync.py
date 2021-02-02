@@ -2,7 +2,7 @@ from pymodbus.server.sync import StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
 import pymodbus.datastore as ds
 
-from modbus_types import PointType, DataType
+from source import PointType
 from modbus_context import LinkedSlaveContext
 import opt
 
