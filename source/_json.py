@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from .point_type import PointType
 from ._base import SourceBase, _get
 
 
@@ -68,11 +69,21 @@ class JsonSource(SourceBase):
         )
 
     def Connect(self):
+        res_list = []
+        info_list = []
         if not self.filepath.exists():
-            wreq,werr = self.Write([0] * self.length)
-            if not wreq: return wreq
-        req,_ = self.Read()
-        return req
+            wres,winfo = self.Write([0] * self.length)
+            if not wres:
+                res_list.append(0)
+                info_list.append(f'...file created failed {self} {winfo}')
+            else:
+                res_list.append(-1)
+                info_list.append(f'..created {self}')
+        
+        rres,rinfo = self.Read()
+        res_list.append(rres)
+        if rinfo: info_list.append(str(rinfo))
+        return all(res_list), info_list
 
     def Read(self):
         try:
@@ -88,7 +99,7 @@ class JsonSource(SourceBase):
             self._addr_start_from = _dict['addr_start_from']
             self.values = _dict['val']
 
-            return 1,self.values
+            return 1,None
         except Exception as e:
             return 0,e
 
@@ -103,6 +114,6 @@ class JsonSource(SourceBase):
             if not self.filepath.parent.is_dir(): self.filepath.parent.mkdir()
             with open(self.filepath, 'w+') as f:
                 json.dump(self.dict, f, indent=2)
-            return 1,self.dict
+            return 1,None
         except Exception as e:
             return 0,e

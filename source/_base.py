@@ -18,9 +18,30 @@ class SourceBase:
 
     @property
     def address_from0(self): raise NotImplementedError
-    def Connect(self): raise NotImplementedError
-    def Read(self): raise NotImplementedError
-    def Write(self, values): raise NotImplementedError
+    def Connect(self):
+        """
+        Return:
+            1,None: connect 成功、無多餘訊息
+            1,info_str: connect 成功、並附帶訊息
+            0,info_str: connect 失敗、附帶錯誤訊息err 
+        """        
+        raise NotImplementedError
+    def Read(self):
+        """
+        Return:
+            1,None: connect 成功、無多餘訊息
+            1,info_str: connect 成功、並附帶訊息
+            0,info_str: connect 失敗、附帶錯誤訊息err 
+        """   
+        raise NotImplementedError
+    def Write(self, values):
+        """
+        Return:
+            1,None: connect 成功、無多餘訊息
+            1,info_str: connect 成功、並附帶訊息
+            0,info_str: connect 失敗、附帶錯誤訊息err 
+        """
+        raise NotImplementedError
 
 
 def _get(_dict, key, val_if_none):

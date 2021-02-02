@@ -34,14 +34,17 @@ class TcpSource(SourceBase):
     def Connect(self):
         if self.client.connect():
             self.is_connected = True
-            return True
+            return 1,None
         else:
-            return False
+            return 0,self.client
 
     def Read(self):
         req,val = self.pointType.RequestValue(self.client, self.address_from0, count=self.length, unit=self.slave_id)
-        if req: self.values = val[:self.length]
-        return req,val
+        if req:
+            self.values = val[:self.length]
+            return 1,None
+        else:
+            return 0,val
 
     def Write(self, values):
         writeFunc = self.pointType._WriteFunc(self.client)
@@ -49,6 +52,6 @@ class TcpSource(SourceBase):
         req = writeFunc(self.address_from0, values)
         if not req.isError():
             self.values = values
-            return 1,req
+            return 1,None
         else:
             return 0,req
