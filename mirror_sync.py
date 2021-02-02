@@ -68,13 +68,14 @@ class SyncMirror():
         matched_src_list = self._MatchSourceList(fx, address)
         if len(matched_src_list) == 1:
             src = matched_src_list[0]
-            req_list.append(src)
             if len(values) == src.length:
+                req_list.append(src)
                 return req_list
             elif len(values) < src.length:
                 self.logger.warning(f'Unequal data length src={src} values={src.values} / written_data={values}')
                 return req_list
             else:
+                req_list.append(src)
                 address += src.length
                 values = values[src.length:]
                 return self._WriteRequestList(fx, address, values, req_list=req_list)
