@@ -110,6 +110,17 @@ class ModbusController:
         self.mirror.Write(fx, address, values)
 
 
+class MetaSingleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class ControllerSingleton(ModbusController, metaclass=MetaSingleton):
+    pass
+
+
 if __name__ == "__main__":
     ctrl = ModbusController('./config.json', mirror_mode='sync', server_mode='sync')
     ctrl.Start(1, 0.5)
