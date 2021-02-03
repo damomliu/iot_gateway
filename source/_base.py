@@ -1,6 +1,10 @@
 from . import PointType, DataType
 
 class SourceBase:
+    _default_pointtype_str = None
+    _default_datatype_str = None
+    _default_addr_start_from = None
+
     def __init__(self, address, point_type_str, data_type_str, addr_start_from=1):
         self.pointType = PointType(point_type_str)
         self.dataType = DataType(data_type_str, self.pointType)
