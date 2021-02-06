@@ -50,24 +50,31 @@ class ModbusController:
             )
         self.logger = logger
 
-    def _getattr(self, kw, _attr_name):
-        if not hasattr(self, _attr_name):
-            default_val = getattr(__class__, f'_default{_attr_name}')
+    def _getattr(self, kw, attr_name):
+        _attr = '_' + attr_name
+        if not hasattr(self, _attr):
+            default_val = getattr(__class__, f'_default{_attr}')
         else:
-            default_val = getattr(self, _attr_name)
-        return kw.get(_attr_name, default_val)
+            default_val = getattr(self, _attr)
+        return kw.get(attr_name, default_val)
 
     def _SetConfig(self, **kw):
-        self._address_path = self._getattr(kw, '_address_path')
-        self._addr_start_from = self._getattr(kw, '_addr_start_from')
-        self._register_folder = self._getattr(kw, '_register_folder')
-        self._source_port = self._getattr(kw, '_source_port')
-        self._pointtype_str = self._getattr(kw, '_pointtype_str')
-        self._datatype_str = self._getattr(kw, '_datatype_str')
-        self._server_host = self._getattr(kw, '_server_host')
-        self._server_port = self._getattr(kw, '_server_port')
-        self._mirror_delay_sec = self._getattr(kw, '_mirror_delay_sec')
-        self._mirror_refresh_sec = self._getattr(kw, '_mirror_refresh_sec')
+        self._address_path = Path(self._getattr(kw, 'address_path'))
+        self._addr_start_from = self._getattr(kw, 'addr_start_from')
+        self._register_folder = Path(self._getattr(kw, 'register_folder'))
+        self._source_port = int(self._getattr(kw, 'source_port'))
+        self._pointtype_str = self._getattr(kw, 'pointtype_str')
+        self._datatype_str = self._getattr(kw, 'datatype_str')
+        self._server_host = self._getattr(kw, 'server_host')
+        self._server_port = int(self._getattr(kw, 'server_port'))
+        self._mirror_delay_sec = float(self._getattr(kw, 'mirror_delay_sec'))
+        self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
+    
+    def _PreCheck(self):
+        assert all([
+            self._addr_start_from in [0,1],
+            self._server_host.replace('.','').isdigit(),
+        ])
 
     @classmethod
     def FromConfigFile(cls, config_path, *args, **kw):
@@ -77,7 +84,7 @@ class ModbusController:
 
     def LoadConfig(self, config_path):
         with open(config_path, 'r') as f:
-            config_dict = json.load(config_path)
+            config_dict = json.load(f)
         self._SetConfig(**config_dict)
 
     @property
@@ -130,7 +137,7 @@ class ModbusController:
         ModbusTarget._default_addr_start_from = self._addr_start_from
 
         TcpSource._default_port = self._source_port
-        JsonSource._default_folder = self._register_folder
+        JsonSource._default_folder = Path(self._register_folder)
 
     def Start(self):
         thread = Thread(target=self.UpdateLoop)
