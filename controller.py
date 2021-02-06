@@ -6,13 +6,13 @@ from threading import Thread
 from logger import OneLogger
 
 import factory
-from source import JsonSource, TcpSource, SourceBase
+from source import JsonSource, TcpSource, ModbusTarget
 
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
-    _default_addr_start_from = 1
     _default_register_folder = Path('./.register/')
+    _default_addr_start_from = 1
     _default_source_port = 502
     _default_pointtype_str = 'hr'
     _default_datatype_str = 'float32'
@@ -32,7 +32,7 @@ class ModbusController:
         self._SetSources()
 
         self.mirror = factory.MIRROR[mirror_mode](
-            src_list=self._GetSrcList(),
+            src_list=self.LoadSrcList(),
             logger=self.logger,
         )
         self.server : factory.SyncServer = factory.SERVER[server_mode](
@@ -75,13 +75,13 @@ class ModbusController:
             config_dict = json.load(f)
         return cls(*args, **kw, **config_dict)
 
-    def ReadConfig(self, config_path):
+    def LoadConfig(self, config_path):
         with open(config_path, 'r') as f:
             config_dict = json.load(config_path)
         self._SetConfig(**config_dict)
-    
+
     @property
-    def config_dict(self): 
+    def config_dict(self):
         kw = {attr: getattr(self, '_'+attr) for attr in [
             'address_path',
             'addr_start_from',
@@ -96,20 +96,20 @@ class ModbusController:
         ]}
         return kw
 
-    def _GetSrcList(self):
+    def LoadSrcList(self):
         src_list = []
         with open(self._address_path, 'r', encoding='utf-8-sig') as f:
             for r in csv.DictReader(f):
+                protocol_str = r.get('SourceProtocol')
                 try:
-                    if r.get('SourceIP', '').replace('.', '').isdigit() \
-                    and r.get('SourceAddress', '').isdigit() \
-                    and r.get('TargetAddress', '').isdigit():
+                    if protocol_str.startswith('modbus_tcp'):
                         # add TcpSource
-                        src_list.append(TcpSource.FromDict(**r))
+                        if protocol_str.endswith('tcp1'):
+                            src_list.append(TcpSource.FromDict(**r, is_writable=False))
+                        elif protocol_str.endswith('tcp1rw'):
+                            src_list.append(TcpSource.FromDict(**r, is_writable=True))
 
-                    elif r.get('TargetWritable') == '*' \
-                    and not r.get('SourceIP') \
-                    and not r.get('SourceAddress'):
+                    elif protocol_str == 'json':
                         # add JsonSource
                         src_list.append(JsonSource.FromDict(**r))
 
@@ -125,11 +125,11 @@ class ModbusController:
         return src_list
 
     def _SetSources(self):
-        SourceBase._default_pointtype_str = self._pointtype_str
-        SourceBase._default_datatype_str = self._datatype_str
-        SourceBase._default_addr_start_from = self._addr_start_from
+        ModbusTarget._default_pointtype_str = self._pointtype_str
+        ModbusTarget._default_datatype_str = self._datatype_str
+        ModbusTarget._default_addr_start_from = self._addr_start_from
 
-        TcpSource._default_src_port = self._source_port
+        TcpSource._default_port = self._source_port
         JsonSource._default_folder = self._register_folder
 
     def Start(self):
@@ -155,8 +155,8 @@ class ModbusController:
             if src.values is None: continue
 
             self.server.context[0x00].setValues(
-                fx=src.pointType.fx,
-                address=src.target_address_from0,
+                fx=src.target.pointType.fx,
+                address=src.target.address_from0,
                 values=src.values,
                 writeback=False,
             )
@@ -177,5 +177,6 @@ class ControllerSingleton(ModbusController, metaclass=MetaSingleton):
 
 
 if __name__ == "__main__":
-    ctrl = ModbusController(mirror_mode='sync', server_mode='sync')
+    # ctrl = ModbusController(mirror_mode='sync', server_mode='sync')
+    ctrl = ModbusController.FromConfigFile('./config.json')
     ctrl.Start()

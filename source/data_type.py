@@ -21,6 +21,15 @@ class DataType:
 
     def __repr__(self): return f'<{__class__.__name__}: {self.type_str}>'
     def __str__(self): return self.type_str
+    @property
+    def repr_short(self):
+        if self._func_postfix == 'bits':
+            return 'bool'
+        elif self._func_postfix == 'string':
+            return 'str'
+        else:
+            bitN,datatype = self._func_postfix.split('_')
+            return f'{datatype[0]}{bitN.replace("bit", "")}'
 
     def _GetFuncName(self):
         self._func_postfix = None

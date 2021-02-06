@@ -12,8 +12,8 @@ class SyncMirror():
 
     def _Validate(self, new_src):
         for src in self.src_list:
-            if src.pointType.type_str != new_src.pointType.type_str: continue
-            if src.target_address_set.intersection(new_src.target_address_set):
+            if src.target.pointType.type_str != new_src.target.pointType.type_str: continue
+            if src.target.address_set.intersection(new_src.target.address_set):
                 self.logger.warning(f'Address conflict!! src={src} / new_src={new_src}')
                 return -1
 
