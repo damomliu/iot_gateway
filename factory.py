@@ -1,4 +1,4 @@
-from server_sync import SyncServer
+from server import SyncServer
 from mirror_sync import SyncMirror
 
 
