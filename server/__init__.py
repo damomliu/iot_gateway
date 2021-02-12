@@ -1,1 +1,1 @@
-from .sync import SyncServer
+from .pymodbus_sync import SyncServer, SyncTcpServer

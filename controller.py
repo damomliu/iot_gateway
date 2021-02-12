@@ -46,7 +46,7 @@ class ModbusController:
             port=self._server_port,
             logger=self.logger,
         )
-        self.server.SetContext(self.context)
+        self.server.Setup(self.context)
 
     def _SetLogger(self, logger):
         if logger is None:
