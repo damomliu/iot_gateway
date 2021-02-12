@@ -7,6 +7,7 @@ from logger import OneLogger
 
 import factory
 from source import JsonSource, TcpSource, ModbusTarget
+from pymodbus_context import LinkedSlaveContext
 
 
 class ModbusController:
@@ -35,12 +36,17 @@ class ModbusController:
             src_list=self.LoadSrcList(),
             logger=self.logger,
         )
+        self.context = LinkedSlaveContext.ServerContext(
+            ctrl=self,
+            zero_mode=bool(not self._addr_start_from),
+            single_slave_mode=True,
+        )
         self.server : factory.SyncServer = factory.SERVER[server_mode](
             host=self._server_host,
             port=self._server_port,
             logger=self.logger,
         )
-        self.server.SetContext(self)
+        self.server.SetContext(self.context)
 
     def _SetLogger(self, logger):
         if logger is None:

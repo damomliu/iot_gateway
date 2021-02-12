@@ -21,17 +21,20 @@ class ServerBase(metaclass=abc.ABCMeta):
         self.identity.ModelName = ServerInfo.name
         self.identity.MajorMinorRevision = __class__.__name__
 
-    @abc.abstractmethod
-    def SetContext(self, ctrl): raise NotImplementedError
+    def SetContext(self, context):
+        self.context = context
 
     @abc.abstractmethod
     def Run(self):
-        """Run server as the main thread
-        """   
+        """Run server as the main thread"""   
         raise NotImplementedError
 
     @abc.abstractmethod
-    def Start(self): raise NotImplementedError
+    def Start(self):
+        """Run server in another thread"""
+        raise NotImplementedError
 
     @abc.abstractmethod
-    def Stop(self): raise NotImplementedError
+    def Stop(self):
+        """Close/Shutdown the thread initiated by Start() method"""
+        raise NotImplementedError
