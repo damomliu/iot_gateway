@@ -33,9 +33,9 @@ class ServerBase(metaclass=abc.ABCMeta):
         """Run server as the main thread"""   
         raise NotImplementedError
 
-    def Start(self):
+    def Start(self, name=None):
         """Run server in another thread"""
-        self._thread = Thread(target=self.Run)
+        self._thread = Thread(target=self.Run, name=name)
         self._thread.start()
 
     @abc.abstractmethod

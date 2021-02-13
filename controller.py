@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 import csv
 import time
-from threading import Thread
+from threading import Thread, Event
 from logger import OneLogger
 
 import factory
@@ -46,7 +46,10 @@ class ModbusController:
             port=self._server_port,
             logger=self.logger,
         )
-        self.server.Setup(self.context)
+        self.server.Setup(self.context, allow_reuse_address=True)
+
+        self.__shutdown_request = False
+        self.__shutdownEvent = Event()
 
     def _SetLogger(self, logger):
         if logger is None:
@@ -146,14 +149,34 @@ class ModbusController:
         JsonSource._default_folder = Path(self._register_folder)
 
     def Start(self):
-        thread = Thread(target=self.UpdateLoop)
-        thread.start()
+        mirror_thread = Thread(target=self.UpdateLoop, name='CtrlMirror')
+        mirror_thread.start()
 
+        self.server.Start(name='CtrlServer')
+
+        shutdown_thread = Thread(target=self.Stop, name='CtrlShutdown')
+        # shutdown_thread.start()
+        self.__shutdownEvent.clear()
         try:
-            self.server.Run()
-        except KeyboardInterrupt:
-            self.logger.info('KeyboarInterrupt')
-            del thread
+            while not self.__shutdown_request:
+                pass
+        finally:
+            self.__shutdown_request = False
+            self.__shutdownEvent.set()
+
+    def Stop(self):
+        countdown_sec = 60
+        for i in range(countdown_sec):
+            left_sec = countdown_sec - i
+            time.sleep(1)
+            if left_sec <= 10: print(f'<{left_sec}>')
+
+        self.server.Stop()
+        self.logger.info('Ctrl closing...')
+        self.__shutdown_request = True
+        self.__shutdownEvent.wait()
+        self.logger.info('Ctrl is closed completely.')
+        
 
     def UpdateLoop(self):
         self.mirror.Connect()
