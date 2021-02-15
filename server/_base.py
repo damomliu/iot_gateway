@@ -35,7 +35,7 @@ class ServerBase(metaclass=abc.ABCMeta):
 
     def Start(self, name=None):
         """Run server in another thread"""
-        self._thread = Thread(target=self.Run, name=name)
+        self._thread = Thread(target=self.Run, name=name, daemon=True)
         self._thread.start()
 
     @abc.abstractmethod

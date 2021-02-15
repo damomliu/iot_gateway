@@ -1,9 +1,9 @@
-from server import SyncServer, SyncTcpServer
+from server import SyncTcpServer
 from mirror_sync import SyncMirror
 
 
 SERVER = {
-    'sync': SyncServer,
+    # 'sync': SyncServer,
     'sync-tcp': SyncTcpServer,
     'async': 0,
 }

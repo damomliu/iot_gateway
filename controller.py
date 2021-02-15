@@ -41,7 +41,7 @@ class ModbusController:
             zero_mode=bool(not self._addr_start_from),
             single_slave_mode=True,
         )
-        self.server : factory.SyncServer = factory.SERVER[server_mode](
+        self.server = factory.SERVER[server_mode](
             host=self._server_host,
             port=self._server_port,
             logger=self.logger,
