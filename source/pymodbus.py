@@ -1,4 +1,5 @@
-from os import replace
+from pymodbus.client.sync import ModbusTcpClient
+
 from . import PointType, DataType
 from ._base import SourceBase, TargetBase, _get, _clean_dict
 
@@ -28,10 +29,10 @@ class TcpSource(SourceBase):
         self.addr_start_from = addr_start_from if addr_start_from else self.target.addr_start_from
         self.is_writable = bool(is_writable)
 
-        self.client = None
-        self.is_connected = False
-        self.values = None
         self._PreCheck()
+
+        self.client = ModbusTcpClient(self.ip, self.port)
+        self.is_connected = False
 
     def _PreCheck(self):
         assert all([
@@ -80,6 +81,14 @@ class TcpSource(SourceBase):
             return 1,None
         else:
             return 0,self.client
+
+    def Disconnect(self):
+        if self.is_connected:
+            self.client.close()
+            self.is_connected = False
+            return 1
+        else:
+            return 0
 
     def Read(self):
         req,val = self.pointType.RequestValue(self.client, self.address_from0, count=self.length, unit=self.slave_id)

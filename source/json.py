@@ -96,6 +96,9 @@ class JsonSource(SourceBase):
 
         return all(res_list), info_list
 
+    def Disconnect(self):
+        return 0
+
     def Read(self):
         try:
             with open(self.filepath, 'r') as f:

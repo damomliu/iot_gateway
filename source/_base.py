@@ -16,6 +16,9 @@ class SourceBase(metaclass=abc.ABCMeta):
         self.target = target
         self.desc = desc if desc else ''
 
+        self.values = None
+        self.client = None
+
     @property
     def length(self): return self.target.length
 
@@ -28,6 +31,18 @@ class SourceBase(metaclass=abc.ABCMeta):
             0,info_str: connect 失敗、附帶錯誤訊息err 
         """
         raise NotImplementedError
+
+    @abc.abstractclassmethod
+    def Disconnect(self):
+        """
+        Return:
+            1: 從已連接的狀態變成離線、可能附帶訊息 info_str
+            0: 原本就沒有連線
+        """        
+        raise NotImplementedError
+
+    def __del__(self):
+        self.Disconnect()
 
     @abc.abstractmethod
     def Read(self):
