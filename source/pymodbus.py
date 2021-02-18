@@ -20,7 +20,7 @@ class TcpSource(SourceBase):
         super().__init__(ip=ip, port=port, address=address, target=target, desc=desc)
         self.slave_id = slave_id or __class__._default_slave_id
         self.pointType = PointType(point_type_str) if point_type_str else self.target.pointType
-        self.dataType = DataType(data_type_str) if data_type_str else self.target.dataType
+        self.dataType = DataType(data_type_str, self.pointType) if data_type_str else self.target.dataType
         self.addr_start_from = addr_start_from if addr_start_from else self.target.addr_start_from
         self.is_writable = bool(is_writable)
 
