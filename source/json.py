@@ -97,6 +97,7 @@ class JsonSource(SourceBase):
         return all(res_list), info_list
 
     def Disconnect(self):
+        self.values = None
         return 0
 
     def Read(self):

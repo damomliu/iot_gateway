@@ -64,4 +64,7 @@ class PointType:
             co=client.write_coils,
             hr=client.write_registers,
         )
-        return req[self.type_str]
+        if self.type_str in req:
+            return req[self.type_str]
+        else:
+            raise Exception('PointtypeNotWritable')

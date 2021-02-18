@@ -7,11 +7,6 @@ from ._base import SourceBase, TargetBase, _get, _clean_dict
 class TcpSource(SourceBase):
     _default_slave_id = 0x00
     _default_port = None
-    def _get_default(self, arg, _attr_name):
-        if arg is None:
-            return getattr(__class__, f'_default{_attr_name}')
-        else:
-            return arg
 
     def __init__(
         self, ip, port, address, target, desc=None,
@@ -23,7 +18,7 @@ class TcpSource(SourceBase):
     ) -> None:
 
         super().__init__(ip=ip, port=port, address=address, target=target, desc=desc)
-        self.slave_id = slave_id
+        self.slave_id = slave_id or __class__._default_slave_id
         self.pointType = PointType(point_type_str) if point_type_str else self.target.pointType
         self.dataType = DataType(data_type_str) if data_type_str else self.target.dataType
         self.addr_start_from = addr_start_from if addr_start_from else self.target.addr_start_from
@@ -100,14 +95,17 @@ class TcpSource(SourceBase):
 
     def Write(self, values):
         if self.is_writable:
-            writeFunc = self.pointType._WriteFunc(self.client)
-            values = values[:self.length]
-            req = writeFunc(self.address_from0, values)
-            if not req.isError():
-                self.values = values
-                return 1,None
-            else:
-                return 0,req
+            try:
+                writeFunc = self.pointType._WriteFunc(self.client)
+                values = values[:self.length]
+                req = writeFunc(self.address_from0, values)
+                if not req.isError():
+                    self.values = values
+                    return 1,None
+                else:
+                    return 0,req
+            except Exception as e:
+                return 0,e
         else:
             return 0,Exception('TargetNotWriable')
 

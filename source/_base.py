@@ -21,6 +21,7 @@ class SourceBase(metaclass=abc.ABCMeta):
 
     @property
     def length(self): return self.target.length
+    def __len__(self): return self.length
 
     @abc.abstractmethod
     def Connect(self):
