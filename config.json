@@ -1,10 +1,10 @@
 {
-    "data_address": "./address.csv",
+    "address_path": "./address.csv",
     "register_folder": "./.register/",
 
-    "default_source_port": 502,
-    "default_pointtype": "hr",
-    "default_datatype": "float32",
+    "source_port": 502,
+    "pointtype_str": "hr",
+    "datatype_str": "float32",
 
     "server_host": "127.0.0.1",
     "server_port": 5020

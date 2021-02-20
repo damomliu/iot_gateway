@@ -1,5 +1,4 @@
 from typing import List
-from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from source import MirrorSourceList, JsonSource, TcpSource
 
 class SyncMirror():
@@ -8,20 +7,13 @@ class SyncMirror():
         self.src_list = MirrorSourceList(mirror=self)
         for src in src_list:
             self.src_list.append(src)
-        self._SetClient()
 
     def _Validate(self, new_src):
         for src in self.src_list:
-            if src.pointType.type_str != new_src.pointType.type_str: continue
-            if src.target_address_set.intersection(new_src.target_address_set):
+            if src.target.pointType.type_str != new_src.target.pointType.type_str: continue
+            if src.target.address_set.intersection(new_src.target.address_set):
                 self.logger.warning(f'Address conflict!! src={src} / new_src={new_src}')
                 return -1
-
-    def _SetClient(self):
-        for src in self.src_list:
-            if isinstance(src, TcpSource):
-                if not src.client:
-                    src.client = ModbusClient(src.ip, src.port)
 
     def Connect(self):
         for src in self.src_list[:]:
@@ -39,9 +31,9 @@ class SyncMirror():
 
     def Disconnect(self):
         for src in self.src_list:
-            if not hasattr(src, 'client'): continue
-            if src.is_connected:
-                src.client.close()
+            res = src.Disconnect()
+            if res:
+                self.logger.debug(f'{src} is disconnected.')
 
     def __del__(self):
         try:
@@ -58,7 +50,7 @@ class SyncMirror():
     def _MatchSourceList(self, fx, address):
         matched_list = []
         for src in self.src_list:
-            if address == src.target_address_from0 and fx in src.pointType.write_fx:
+            if address == src.target.address_from0 and fx in src.pointType.write_fx:
                 matched_list.append(src)
 
         return matched_list

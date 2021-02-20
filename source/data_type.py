@@ -21,44 +21,54 @@ class DataType:
 
     def __repr__(self): return f'<{__class__.__name__}: {self.type_str}>'
     def __str__(self): return self.type_str
+    @property
+    def repr_short(self):
+        if self._func_postfix == 'bits':
+            return 'bool'
+        elif self._func_postfix == 'string':
+            return 'str'
+        else:
+            bitN,datatype = self._func_postfix.split('_')
+            return f'{datatype[0]}{bitN.replace("bit", "")}'
+
+    @property
+    def _func_postfix(self):
+        if self.basic_type_str in ['bits', 'string']:
+            return self.basic_type_str
+        elif self.bit_N is not None:
+            return f'{self.bit_N}bit_{self.basic_type_str}'
+        else:
+            return None
 
     def _GetFuncName(self):
-        self._func_postfix = None
         self._add_by_bits = False
+        self.bit_N = None
+        self.basic_type_str = None
 
         if self.type_str in ['bool', 'boolean']:
-            self._func_postfix = 'bits'
+            self.basic_type_str = 'bits'
             self._add_by_bits = True
+
         elif self.type_str in ['str', 'string']:
-            self._func_postfix = 'string'
+            self.basic_type_str = 'string'
+
         elif self.type_str.startswith('int'):
+            self.basic_type_str = 'int'
             _bit = int(self.type_str[3:])
-            if _bit == 8:
-                self._func_postfix = '8bit_int'
-            elif _bit == 16:
-                self._func_postfix = '16bit_int'
-            elif _bit == 32:
-                self._func_postfix = '32bit_int'
-            elif _bit == 64:
-                self._func_postfix = '64bit_int'
+            if _bit in [8, 16, 32, 64]:
+                self.bit_N = _bit
+
         elif self.type_str.startswith('uint'):
+            self.basic_type_str = 'uint'
             _bit = int(self.type_str[4:])
-            if _bit == 8:
-                self._func_postfix = '8bit_uint'
-            elif _bit == 16:
-                self._func_postfix = '16bit_uint'
-            elif _bit == 32:
-                self._func_postfix = '32bit_uint'
-            elif _bit == 64:
-                self._func_postfix = '64bit_uint'
+            if _bit in [8, 16, 32, 64]:
+                self.bit_N = _bit
+
         elif self.type_str.startswith('float'):
+            self.basic_type_str = 'float'
             _bit = int(self.type_str[len('float'):])
-            if _bit == 16:
-                self._func_postfix = '16bit_float'
-            elif _bit == 32:
-                self._func_postfix = '32bit_float'
-            elif _bit == 64:
-                self._func_postfix = '64bit_float'
+            if _bit in [16, 32, 64]:
+                self.bit_N = _bit
 
         if self._func_postfix is None:
             raise ValueError(f'Invalid Data Type: {self.type_str}')

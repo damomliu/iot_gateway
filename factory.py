@@ -1,12 +1,13 @@
-from server_sync import SyncServer
+from server import SyncTcpServer
 from mirror_sync import SyncMirror
 
 
 SERVER = {
-    'sync': SyncServer,
+    # 'sync': SyncServer,
+    'sync-tcp': SyncTcpServer,
     'async': 0,
 }
-DEFAULT_SERVER_MODE = 'sync'
+DEFAULT_SERVER_MODE = 'sync-tcp'
 
 MIRROR = {
     'sync': SyncMirror,

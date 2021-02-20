@@ -2,17 +2,18 @@ from pathlib import Path
 import json
 import csv
 import time
-from threading import Thread
+from threading import Thread, Event
 from logger import OneLogger
 
 import factory
-from source import JsonSource, TcpSource, SourceBase
+from source import JsonSource, TcpSource, ModbusTarget
+from pymodbus_context import LinkedSlaveContext
 
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
-    _default_addr_start_from = 1
     _default_register_folder = Path('./.register/')
+    _default_addr_start_from = 1
     _default_source_port = 502
     _default_pointtype_str = 'hr'
     _default_datatype_str = 'float32'
@@ -32,15 +33,23 @@ class ModbusController:
         self._SetSources()
 
         self.mirror = factory.MIRROR[mirror_mode](
-            src_list=self._GetSrcList(),
+            src_list=self.LoadSrcList(),
             logger=self.logger,
         )
-        self.server : factory.SyncServer = factory.SERVER[server_mode](
+        self.context = LinkedSlaveContext.ServerContext(
+            ctrl=self,
+            zero_mode=bool(not self._addr_start_from),
+            single_slave_mode=True,
+        )
+        self.server = factory.SERVER[server_mode](
             host=self._server_host,
             port=self._server_port,
             logger=self.logger,
         )
-        self.server.Setup(self)
+        self.server.Setup(self.context, allow_reuse_address=True)
+
+        self.__shutdown_request = False
+        self.__shutdownEvent = Event()
 
     def _SetLogger(self, logger):
         if logger is None:
@@ -50,24 +59,31 @@ class ModbusController:
             )
         self.logger = logger
 
-    def _getattr(self, kw, _attr_name):
-        if not hasattr(self, _attr_name):
-            default_val = getattr(__class__, f'_default{_attr_name}')
+    def _getattr(self, kw, attr_name):
+        _attr = '_' + attr_name
+        if not hasattr(self, _attr):
+            default_val = getattr(__class__, f'_default{_attr}')
         else:
-            default_val = getattr(self, _attr_name)
-        return kw.get(_attr_name, default_val)
+            default_val = getattr(self, _attr)
+        return kw.get(attr_name, default_val)
 
     def _SetConfig(self, **kw):
-        self._address_path = self._getattr(kw, '_address_path')
-        self._addr_start_from = self._getattr(kw, '_addr_start_from')
-        self._register_folder = self._getattr(kw, '_register_folder')
-        self._source_port = self._getattr(kw, '_source_port')
-        self._pointtype_str = self._getattr(kw, '_pointtype_str')
-        self._datatype_str = self._getattr(kw, '_datatype_str')
-        self._server_host = self._getattr(kw, '_server_host')
-        self._server_port = self._getattr(kw, '_server_port')
-        self._mirror_delay_sec = self._getattr(kw, '_mirror_delay_sec')
-        self._mirror_refresh_sec = self._getattr(kw, '_mirror_refresh_sec')
+        self._address_path = Path(self._getattr(kw, 'address_path'))
+        self._addr_start_from = self._getattr(kw, 'addr_start_from')
+        self._register_folder = Path(self._getattr(kw, 'register_folder'))
+        self._source_port = int(self._getattr(kw, 'source_port'))
+        self._pointtype_str = self._getattr(kw, 'pointtype_str')
+        self._datatype_str = self._getattr(kw, 'datatype_str')
+        self._server_host = self._getattr(kw, 'server_host')
+        self._server_port = int(self._getattr(kw, 'server_port'))
+        self._mirror_delay_sec = float(self._getattr(kw, 'mirror_delay_sec'))
+        self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
+    
+    def _PreCheck(self):
+        assert all([
+            self._addr_start_from in [0,1],
+            self._server_host.replace('.','').isdigit(),
+        ])
 
     @classmethod
     def FromConfigFile(cls, config_path, *args, **kw):
@@ -75,13 +91,13 @@ class ModbusController:
             config_dict = json.load(f)
         return cls(*args, **kw, **config_dict)
 
-    def ReadConfig(self, config_path):
+    def LoadConfig(self, config_path):
         with open(config_path, 'r') as f:
-            config_dict = json.load(config_path)
+            config_dict = json.load(f)
         self._SetConfig(**config_dict)
-    
+
     @property
-    def config_dict(self): 
+    def config_dict(self):
         kw = {attr: getattr(self, '_'+attr) for attr in [
             'address_path',
             'addr_start_from',
@@ -96,20 +112,20 @@ class ModbusController:
         ]}
         return kw
 
-    def _GetSrcList(self):
+    def LoadSrcList(self):
         src_list = []
         with open(self._address_path, 'r', encoding='utf-8-sig') as f:
             for r in csv.DictReader(f):
+                protocol_str = r.get('SourceProtocol')
                 try:
-                    if r.get('SourceIP', '').replace('.', '').isdigit() \
-                    and r.get('SourceAddress', '').isdigit() \
-                    and r.get('TargetAddress', '').isdigit():
+                    if protocol_str.startswith('modbus_tcp'):
                         # add TcpSource
-                        src_list.append(TcpSource.FromDict(**r))
+                        if protocol_str.endswith('tcp1'):
+                            src_list.append(TcpSource.FromDict(**r, is_writable=False))
+                        elif protocol_str.endswith('tcp1rw'):
+                            src_list.append(TcpSource.FromDict(**r, is_writable=True))
 
-                    elif r.get('TargetWritable') == '*' \
-                    and not r.get('SourceIP') \
-                    and not r.get('SourceAddress'):
+                    elif protocol_str == 'json':
                         # add JsonSource
                         src_list.append(JsonSource.FromDict(**r))
 
@@ -125,22 +141,42 @@ class ModbusController:
         return src_list
 
     def _SetSources(self):
-        SourceBase._default_pointtype_str = self._pointtype_str
-        SourceBase._default_datatype_str = self._datatype_str
-        SourceBase._default_addr_start_from = self._addr_start_from
+        ModbusTarget._default_pointtype_str = self._pointtype_str
+        ModbusTarget._default_datatype_str = self._datatype_str
+        ModbusTarget._default_addr_start_from = self._addr_start_from
 
-        TcpSource._default_src_port = self._source_port
-        JsonSource._default_folder = self._register_folder
+        TcpSource._default_port = self._source_port
+        JsonSource._default_folder = Path(self._register_folder)
 
     def Start(self):
-        thread = Thread(target=self.UpdateLoop)
-        thread.start()
+        mirror_thread = Thread(target=self.UpdateLoop, name='CtrlMirror')
+        mirror_thread.start()
 
+        self.server.Start(name='CtrlServer')
+
+        shutdown_thread = Thread(target=self.Stop, name='CtrlShutdown')
+        # shutdown_thread.start()
+        self.__shutdownEvent.clear()
         try:
-            self.server.Run()
-        except KeyboardInterrupt:
-            self.logger.info('KeyboarInterrupt')
-            del thread
+            while not self.__shutdown_request:
+                pass
+        finally:
+            self.__shutdown_request = False
+            self.__shutdownEvent.set()
+
+    def Stop(self):
+        countdown_sec = 60
+        for i in range(countdown_sec):
+            left_sec = countdown_sec - i
+            time.sleep(1)
+            if left_sec <= 10: print(f'<{left_sec}>')
+
+        self.server.Stop()
+        self.logger.info('Ctrl closing...')
+        self.__shutdown_request = True
+        self.__shutdownEvent.wait()
+        self.logger.info('Ctrl is closed completely.')
+        
 
     def UpdateLoop(self):
         self.mirror.Connect()
@@ -155,8 +191,8 @@ class ModbusController:
             if src.values is None: continue
 
             self.server.context[0x00].setValues(
-                fx=src.pointType.fx,
-                address=src.target_address_from0,
+                fx=src.target.pointType.fx,
+                address=src.target.address_from0,
                 values=src.values,
                 writeback=False,
             )
@@ -177,5 +213,6 @@ class ControllerSingleton(ModbusController, metaclass=MetaSingleton):
 
 
 if __name__ == "__main__":
-    ctrl = ModbusController(mirror_mode='sync', server_mode='sync')
+    # ctrl = ModbusController(mirror_mode='sync', server_mode='sync')
+    ctrl = ModbusController.FromConfigFile('./config.json')
     ctrl.Start()
