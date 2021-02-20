@@ -4,3 +4,4 @@ from .list import MirrorSourceList
 
 from .pymodbus import TcpSource, ModbusTarget
 from .json import JsonSource
+from .hsl import HslModbusTcpSource
