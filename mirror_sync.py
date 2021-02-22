@@ -50,7 +50,7 @@ class SyncMirror():
     def _MatchSourceList(self, fx, address):
         matched_list = []
         for src in self.src_list:
-            if address == src.target.address_from0 and fx in src.pointType.write_fx:
+            if address == src.target.address_from0 and fx in src.target.pointType.write_fx:
                 matched_list.append(src)
 
         return matched_list
@@ -93,8 +93,9 @@ class SyncMirror():
             req,err = src.Write(values[:src.length])
             if req:
                 try:
-                    original_val = src.dataType.Decode(original_val)
-                    src_values = src.dataType.Decode(src.values)
+                    decode_func = src.target.dataType.Decode
+                    original_val = decode_func(original_val)
+                    src_values = decode_func(src.values)
                 except:
                     src_values = src.values
 

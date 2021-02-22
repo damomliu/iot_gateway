@@ -115,6 +115,6 @@ class DataType:
         decode_func = getattr(self.decoder, self._DecodeFuncName)
         val = decode_func()
         if self._add_by_bits:
-            return val[-1]
+            return val[0]
         else:
             return val
