@@ -6,7 +6,8 @@ from threading import Thread, Event
 from logger import OneLogger
 
 import factory
-from source import JsonSource, TcpSource, ModbusTarget
+from source import ModbusTarget
+from source import TcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
 
@@ -124,6 +125,10 @@ class ModbusController:
                             src_list.append(TcpSource.FromDict(**r, is_writable=False))
                         elif protocol_str.endswith('tcp1rw'):
                             src_list.append(TcpSource.FromDict(**r, is_writable=True))
+                        elif protocol_str.endswith('tcp2'):
+                            src_list.append(HslModbusTcpSource.FromDict(**r, is_writable=False))
+                        elif protocol_str.endswith('tcp2rw'):
+                            src_list.append(HslModbusTcpSource.FromDict(**r, is_writable=True))
 
                     elif protocol_str == 'json':
                         # add JsonSource
@@ -146,6 +151,7 @@ class ModbusController:
         ModbusTarget._default_addr_start_from = self._addr_start_from
 
         TcpSource._default_port = self._source_port
+        HslModbusTcpSource._default_port = self._source_port
         JsonSource._default_folder = Path(self._register_folder)
 
     def Start(self):
