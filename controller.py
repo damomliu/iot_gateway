@@ -20,7 +20,6 @@ class ModbusController:
     _default_datatype_str = 'float32'
     _default_server_host = '127.0.0.1'
     _default_server_port = 5020
-    _default_mirror_delay_sec = 1
     _default_mirror_refresh_sec = 0.5
     _default_shutdown_delay_sec = 0
 
@@ -50,6 +49,7 @@ class ModbusController:
         )
         self.server.Setup(self.context, allow_reuse_address=True)
 
+        self.__runserver_request = False
         self.__shutdown_request = False
         self.__shutdownEvent = Event()
 
@@ -78,7 +78,6 @@ class ModbusController:
         self._datatype_str = self._getattr(kw, 'datatype_str')
         self._server_host = self._getattr(kw, 'server_host')
         self._server_port = int(self._getattr(kw, 'server_port'))
-        self._mirror_delay_sec = float(self._getattr(kw, 'mirror_delay_sec'))
         self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
         self._shutdown_delay_sec = int(self._getattr(kw, 'shutdown_delay_sec'))
     
@@ -110,7 +109,6 @@ class ModbusController:
             'datatype_str',
             'server_host',
             'server_port',
-            'mirror_delay_sec',
             'mirror_refresh_sec',
         ]}
         return kw
@@ -157,10 +155,16 @@ class ModbusController:
         JsonSource._default_folder = Path(self._register_folder)
 
     def Start(self):
+        self.__runserver_request = False
         mirror_thread = Thread(target=self.UpdateLoop, name='CtrlMirror')
         mirror_thread.start()
 
-        self.server.Start(name='CtrlServer')
+        try:
+            while not self.__runserver_request:
+                pass
+        finally:
+            self.__runserver_request = False
+            self.server.Start(name='CtrlServer')
 
         # shutdown_thread = Thread(target=self.Stop, name='CtrlShutdown')
         # shutdown_thread.start()
@@ -187,11 +191,15 @@ class ModbusController:
 
     def UpdateLoop(self):
         self.mirror.Connect()
-        if self._mirror_delay_sec: time.sleep(self._mirror_delay_sec)
+
+        _tag = True
         while True:
             self.mirror.Read()
             self.WriteContext()
             time.sleep(self._mirror_refresh_sec)
+            if _tag:
+                _tag = False
+                self.__runserver_request = True
 
     def WriteContext(self):
         for src in self.mirror.src_list:

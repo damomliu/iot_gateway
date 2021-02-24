@@ -20,14 +20,15 @@ class SyncMirror():
             res,info = src.Connect()
             if res:
                 if info:
-                    self.logger.info(' / '.join([f'connected to {src} OK'] + info))
+                    self.logger.debug(' / '.join([f'connected to {src} OK'] + info))
                 else:
-                    self.logger.info(f'connected to {src} OK')
+                    self.logger.debug(f'connected to {src} OK')
             else:
                 self.logger.warning(f'...not connected : {src} / {info}')
                 self.src_list.remove(src)
 
         self.logger.info(f'Mirroring from [{len(self.src_list)}] sources')
+        self.logger.info(dict(self.src_list.counter))
 
     def Disconnect(self):
         for src in self.src_list:

@@ -1,3 +1,6 @@
+from collections import Counter
+from collections import Counter
+
 class MirrorSourceList(list):
     def __init__(self, *args, mirror):
         super().__init__()
@@ -8,3 +11,6 @@ class MirrorSourceList(list):
     def append(self, new_src):
         if self.mirror._Validate(new_src) is not -1:
             return super().append(new_src)
+
+    @property
+    def counter(self): return Counter(src.__class__.__name__ for src in self)
