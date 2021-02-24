@@ -4,7 +4,7 @@ from . import PointType, DataType
 from ._base import SourceBase, TargetBase, _get, _clean_dict
 
 
-class TcpSource(SourceBase):
+class PyModbusTcpSource(SourceBase):
     _default_slave_id = 0x00
     _default_port = None
 

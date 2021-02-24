@@ -7,7 +7,7 @@ from logger import OneLogger
 
 import factory
 from source import ModbusTarget
-from source import TcpSource, JsonSource, HslModbusTcpSource
+from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
 
@@ -22,6 +22,7 @@ class ModbusController:
     _default_server_port = 5020
     _default_mirror_delay_sec = 1
     _default_mirror_refresh_sec = 0.5
+    _default_shutdown_delay_sec = 0
 
     def __init__(self,
         logger=None,
@@ -56,7 +57,7 @@ class ModbusController:
         if logger is None:
             logger = OneLogger(
                 __class__.__name__,
-                level_str='debug',
+                level_str='info',
             )
         self.logger = logger
 
@@ -79,6 +80,7 @@ class ModbusController:
         self._server_port = int(self._getattr(kw, 'server_port'))
         self._mirror_delay_sec = float(self._getattr(kw, 'mirror_delay_sec'))
         self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
+        self._shutdown_delay_sec = int(self._getattr(kw, 'shutdown_delay_sec'))
     
     def _PreCheck(self):
         assert all([
@@ -122,9 +124,9 @@ class ModbusController:
                     if protocol_str.startswith('modbus_tcp'):
                         # add TcpSource
                         if protocol_str.endswith('tcp1'):
-                            src_list.append(TcpSource.FromDict(**r, is_writable=False))
+                            src_list.append(PyModbusTcpSource.FromDict(**r, is_writable=False))
                         elif protocol_str.endswith('tcp1rw'):
-                            src_list.append(TcpSource.FromDict(**r, is_writable=True))
+                            src_list.append(PyModbusTcpSource.FromDict(**r, is_writable=True))
                         elif protocol_str.endswith('tcp2'):
                             src_list.append(HslModbusTcpSource.FromDict(**r, is_writable=False))
                         elif protocol_str.endswith('tcp2rw'):
@@ -150,7 +152,7 @@ class ModbusController:
         ModbusTarget._default_datatype_str = self._datatype_str
         ModbusTarget._default_addr_start_from = self._addr_start_from
 
-        TcpSource._default_port = self._source_port
+        PyModbusTcpSource._default_port = self._source_port
         HslModbusTcpSource._default_port = self._source_port
         JsonSource._default_folder = Path(self._register_folder)
 
@@ -160,7 +162,7 @@ class ModbusController:
 
         self.server.Start(name='CtrlServer')
 
-        shutdown_thread = Thread(target=self.Stop, name='CtrlShutdown')
+        # shutdown_thread = Thread(target=self.Stop, name='CtrlShutdown')
         # shutdown_thread.start()
         self.__shutdownEvent.clear()
         try:
@@ -171,11 +173,10 @@ class ModbusController:
             self.__shutdownEvent.set()
 
     def Stop(self):
-        countdown_sec = 60
-        for i in range(countdown_sec):
-            left_sec = countdown_sec - i
+        for i in range(self._shutdown_delay_sec):
+            left_sec = self._shutdown_delay_sec - i
             time.sleep(1)
-            if left_sec <= 10: print(f'<{left_sec}>')
+            print(f'<{left_sec}>')
 
         self.server.Stop()
         self.logger.info('Ctrl closing...')

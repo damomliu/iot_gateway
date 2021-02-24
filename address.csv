@@ -1,4 +1,4 @@
-﻿SourceProtocol,SourceIP,SourcePort,SourceOption,SourceAddress,SourceDesc,PointType,DataType,TargetAddress,TargetDesc
+﻿SourceProtocol,SourceIP,SourcePort,SourceOption,SourceAddress,SourceDesc,SourcePointType,DataType,TargetAddress,TargetDesc
 ---,---,---,"",---,---,---,---,---,---
 modbus_tcp1(唯讀; pymodbus),(must),(預設502),"",(must),,co/di/hr/ir,"bool, int16/32/64, uint16/32/64, float16/32/64",(must),
 modbus_tcp1rw(可讀寫; pymodbus),(must),(預設502),"",(must),,co/hr,同上,(must),

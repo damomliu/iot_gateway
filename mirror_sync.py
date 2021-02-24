@@ -1,5 +1,5 @@
-from typing import List
-from source import MirrorSourceList, JsonSource, TcpSource
+from time import time
+from source import MirrorSourceList
 
 class SyncMirror():
     def __init__(self, src_list, logger) -> None:
@@ -20,9 +20,9 @@ class SyncMirror():
             res,info = src.Connect()
             if res:
                 if info:
-                    self.logger.debug(' / '.join([f'connected to {src} OK'] + info))
+                    self.logger.info(' / '.join([f'connected to {src} OK'] + info))
                 else:
-                    self.logger.debug(f'connected to {src} OK')
+                    self.logger.info(f'connected to {src} OK')
             else:
                 self.logger.warning(f'...not connected : {src} / {info}')
                 self.src_list.remove(src)
@@ -33,7 +33,7 @@ class SyncMirror():
         for src in self.src_list:
             res = src.Disconnect()
             if res:
-                self.logger.debug(f'{src} is disconnected.')
+                self.logger.info(f'{src} is disconnected.')
 
     def __del__(self):
         try:
@@ -42,10 +42,13 @@ class SyncMirror():
             pass
 
     def Read(self):
+        debug_msg_interval_sec = 60
         for src in self.src_list:
             req,val = src.Read()
             if not req:
                 self.logger.error(f'Read failed {src} {val}')
+            elif time() % debug_msg_interval_sec < 1:
+                self.logger.debug(f'{src} val = {val}')
 
     def _MatchSourceList(self, fx, address):
         matched_list = []
@@ -77,13 +80,6 @@ class SyncMirror():
             return req_list
         else:
             self.logger.warning(f'No matched source of fx={fx} address={address}')
-            # src = JsonSource.FromFx(fx, address, values)
-            # req,_ = src.Write()
-            # if req:
-            #     self.src_list.append(src)
-            #     self.logger.info(f'New source created {src} val={values}')
-            # else:
-            #     self.logger.error(f'Failed to create JsonSource {src}')
             return req_list
 
     def Write(self, fx, address, values):
