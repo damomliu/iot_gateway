@@ -10,7 +10,13 @@ class MirrorSourceList(list):
     
     def append(self, new_src):
         if self.mirror._Validate(new_src) is not -1:
-            return super().append(new_src)
+            super().append(new_src)
+
+            for src in self:
+                if src.client == new_src.client:
+                    new_src.client = src.client
+                    break
+            
 
     @property
     def counter(self): return Counter(src.__class__.__name__ for src in self)

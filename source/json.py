@@ -1,20 +1,26 @@
 import json
 from pathlib import Path
 from . import PointType
-from ._base import SourceBase, _get, _clean_dict
+from ._base import SourcePairBase, ClientBase, _get, _clean_dict
 from .pymodbus import ModbusTarget
 
 
-class JsonSource(SourceBase):
+class JsonSource(SourcePairBase):
     _default_folder = None
 
     def __init__(self, filepath, target, desc=None, values=None):
-        super().__init__(ip=None, port=None, address=None, target=target, desc=desc)
+        super().__init__(
+            client=JsonClient(filepath),
+            target=target,
+            desc=desc
+        )
         self.values = values
-        self.filepath = Path(filepath)
 
     def __repr__(self) -> str:
         return f'<{__class__.__name__}/{self.target.pointType.type_str} : {self.target.repr_postfix}'
+
+    @property
+    def filepath(self): return self.client.filepath
 
     @classmethod
     def FromDict(cls, **kw):
@@ -30,39 +36,6 @@ class JsonSource(SourceBase):
             desc=kw.get('SourceDesc')
         )
         return cls(**kwargs)
-
-    # @classmethod
-    # def FromFile(cls, filepath):
-    #     with open(filepath, 'r') as f:
-    #         _dict = json.load(f)
-    #     return cls(filepath, **_dict)
-
-    # @classmethod
-    # def FromFx(cls, fx, address, values):
-    #     assert all([
-    #         __class__._default_datatype_str is not None,
-    #         __class__._default_addr_start_from is not None,
-    #         __class__._default_folder is not None,
-    #     ]), f'Need to setup default value for <{__class__.__name__}>'
-
-    #     if fx in [6, 16]:
-    #         pt = 'hr'
-    #     elif fx in [5, 16]:
-    #         pt = 'co'
-    #     else:
-    #         raise RuntimeError(f'Invalid fx = {fx}')
-
-    #     if not hasattr(values, '__iter__'):
-    #         values = [values]
-
-    #     return cls(
-    #         filepath=__class__._default_folder / f'{pt}_{address:05d}.json',
-    #         address=address,
-    #         point_type_str=pt,
-    #         data_type_str=__class__._default_datatype_str,
-    #         addr_start_from=__class__._default_addr_start_from,
-    #         val=values,
-    #     )
 
     @property
     def dict(self):
@@ -132,3 +105,25 @@ class JsonSource(SourceBase):
             return 1,None
         except Exception as e:
             return 0,e
+
+
+class JsonClient(ClientBase):
+    def __init__(self, filepath):
+        self.filepath = Path(filepath)
+
+    def __eq__(self, o) -> bool:
+        if not isinstance(o, JsonClient):
+            return False
+
+        else:
+            my_path = self.filepath.resolve()
+            o_path = Path(o.filepath).resolve()
+            return my_path == o_path
+
+    def _error(self): raise Exception('JsonClient is not a connection')
+
+    def Connect(self): self._error()
+    def Disconnect(self): self._error()
+    def Read(self): self._error()
+    def Write(self): self._error()
+

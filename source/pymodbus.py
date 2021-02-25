@@ -1,15 +1,16 @@
 from pymodbus.client.sync import ModbusTcpClient
 
 from . import PointType, DataType
-from ._base import SourceBase, TargetBase, _get, _clean_dict
+from ._base import SourcePairBase, ClientBase, TargetBase, _get, _clean_dict
 
 
-class PyModbusTcpSource(SourceBase):
+class PyModbusTcpSource(SourcePairBase):
     _default_slave_id = 0x00
     _default_port = None
 
     def __init__(
-        self, ip, port, address, target, desc=None,
+        self, client, target, desc=None,
+        address:int=None,
         slave_id:int=None,
         point_type_str:str=None,
         data_type_str:str=None,
@@ -17,7 +18,8 @@ class PyModbusTcpSource(SourceBase):
         is_writable:bool=False,
     ) -> None:
 
-        super().__init__(ip=ip, port=port, address=address, target=target, desc=desc)
+        super().__init__(client, target, desc)
+        self.address = address
         self.slave_id = slave_id or __class__._default_slave_id
         self.pointType = PointType(point_type_str) if point_type_str else self.target.pointType
         self.dataType = DataType(data_type_str, self.pointType) if data_type_str else self.target.dataType
@@ -26,27 +28,21 @@ class PyModbusTcpSource(SourceBase):
 
         self._PreCheck()
 
-        self.client = ModbusTcpClient(self.ip, self.port)
-        self.is_connected = False
-
     def _PreCheck(self):
         assert all([
-            self.ip.replace('.','').isdigit(),
-            isinstance(self.port, int),
             isinstance(self.address, int),
             isinstance(self.slave_id, int),
             self.addr_start_from in [0,1],
         ])
 
     def __repr__(self) -> str:
-        rep_str = f'<{__class__.__name__}@{self.ip}/{self.pointType.type_str}_{self.dataType.repr_short}_{self.address}'
-        if self.length > 1: rep_str += f'(*{self.length})'
+        rep_str = f'<{__class__.__name__}@{self.client.ip}/{self.pointType.type_str}_{self.dataType.repr_short}_{self.address}'
+        if len(self) > 1: rep_str += f'(*{len(self)})'
         return rep_str + f' : {self.target.repr_postfix}'
 
     @property
     def address_from0(self): return self.address - self.addr_start_from
-    @property
-    def length(self): return self.dataType.length
+    def __len__(self): return self.dataType.length
 
     @classmethod
     def FromDict(cls, is_writable=False, **kw):
@@ -56,11 +52,14 @@ class PyModbusTcpSource(SourceBase):
         ]]), f'Need to setup default value for <{cls.__name__}>'
         
         target = ModbusTarget.FromDict(**kw)
-        kwargs = _clean_dict(
+        client = PyModbusTcpClient(
             ip=kw['SourceIP'],
             port=_get(kw, 'SourcePort', cls._default_port),
-            address=int(kw['SourceAddress']),
+        )
+        kwargs = _clean_dict(
+            client=client,
             target=target,
+            address=int(kw['SourceAddress']),
             slave_id=cls._default_slave_id,
             point_type_str=kw.get('SourcePointType'),
             data_type_str=kw.get('SourceDataype'),
@@ -70,44 +69,71 @@ class PyModbusTcpSource(SourceBase):
         )
         return cls(**kwargs)
 
-    def Connect(self):
-        if self.client.connect():
-            self.is_connected = True
-            return 1,None
-        else:
-            return 0,self.client
-
-    def Disconnect(self):
-        if self.is_connected:
-            self.client.close()
-            self.is_connected = False
-            return 1
-        else:
-            return 0
-
     def Read(self):
-        req,val = self.pointType.RequestValue(self.client, self.address_from0, count=self.length, unit=self.slave_id)
+        req,val = self.client.Read(self.pointType, self.address_from0, len(self), self.slave_id)
         if req:
-            self.values = val[:self.length]
-            return 1,None
+            self.values = val[:len(self)]
+            return 1,val
         else:
             return 0,val
 
     def Write(self, values):
         if self.is_writable:
-            try:
-                writeFunc = self.pointType._WriteFunc(self.client)
-                values = values[:self.length]
-                req = writeFunc(self.address_from0, values)
-                if not req.isError():
-                    self.values = values
-                    return 1,None
-                else:
-                    return 0,req
-            except Exception as e:
-                return 0,e
+            values = values[:len(self)]
+            req,info = self.client.Write(values, self.pointType, self.address_from0, self.slave_id)
+            if req:
+                self.values = values
+                return 1,values
+            else:
+                return 0,info
         else:
-            return 0,Exception('TargetNotWriable')
+            return 0,Exception('SourceNotWriable')
+
+class PyModbusTcpClient(ClientBase, ModbusTcpClient):
+    def __init__(self, ip, port):
+        ClientBase.__init__(self, ip, port)
+        ModbusTcpClient.__init__(self, ip, port)
+
+    def __repr__(self) -> str:
+        return f'<{__class__.__name__}@{self.ip}:{self.port}'
+
+    def __eq__(self, o) -> bool:
+        if not isinstance(o, type(self)):
+            return False
+        else:
+            return all([
+                self.ip == o.ip,
+                self.port == o.port,
+            ])
+
+    def Connect(self):
+        if self.connect():
+            return 1,None
+        else:
+            return 0,self
+
+    def Disconnect(self):
+        if self.connect():
+            self.close()
+            return 1
+        else:
+            return 0
+
+    def Read(self, point_type:PointType, address_from0:int, count:int, unit:int):
+        req,val = point_type.RequestValue(self, address_from0, count, unit_id=unit)
+        return req,val
+
+    def Write(self, values, point_type:PointType, address_from0:int, unit:int):
+        try:
+            writeFunc = point_type._WriteFunc(self)
+            req = writeFunc(address_from0, values, unit_id=unit)
+            if req.isError():
+                return 0,req
+            else:
+                return 1,values
+
+        except Exception as e:
+            return 0,e
 
 
 class ModbusTarget(TargetBase):
