@@ -6,7 +6,7 @@ from .pymodbus import ModbusTarget
 
 
 class HslModbusTcpSource(SourceBase):
-    _default_slave_id = 0x00
+    _default_slave_id = 0x01
     _default_port = None
 
     def __init__(
@@ -19,7 +19,7 @@ class HslModbusTcpSource(SourceBase):
     ) -> None:
 
         super().__init__(ip, port, address, target, desc=desc)
-        self.slave_id = slave_id
+        self.slave_id = int(slave_id or __class__._default_slave_id)
         self.pointType = PointType(point_type_str) if point_type_str else self.target.pointType
         self.dataType = DataType(data_type_str, self.pointType) if data_type_str else self.target.dataType
         self.addr_start_from = addr_start_from if addr_start_from else self.target.addr_start_from
@@ -75,7 +75,7 @@ class HslModbusTcpSource(SourceBase):
             port=_get(kw, 'SourcePort', cls._default_port),
             address=int(kw['SourceAddress']),
             target=target,
-            slave_id=cls._default_slave_id,
+            slave_id=kw.get("SourceDeviceID"),
             point_type_str=kw.get('SourcePointType'),
             data_type_str=kw.get('SourceDataype'),
             addr_start_from=kw.get('addr_start_from'),
@@ -167,6 +167,7 @@ class HslModbusTcpSource(SourceBase):
 
             return 1,self.values
         else:
+            self.values = None
             return 0,res.ToMessageShowString()
 
     def Write(self, values):

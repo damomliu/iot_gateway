@@ -16,10 +16,13 @@ class ModbusController:
     _default_register_folder = Path('./.register/')
     _default_addr_start_from = 1
     _default_source_port = 502
+    _default_source_sid = 0x01
     _default_pointtype_str = 'hr'
     _default_datatype_str = 'float32'
     _default_server_host = '127.0.0.1'
     _default_server_port = 5020
+    _default_server_sid = 0x00
+    _default_server_null_value = -99
     _default_mirror_refresh_sec = 0.5
     _default_shutdown_delay_sec = 0
 
@@ -74,10 +77,13 @@ class ModbusController:
         self._addr_start_from = self._getattr(kw, 'addr_start_from')
         self._register_folder = Path(self._getattr(kw, 'register_folder'))
         self._source_port = int(self._getattr(kw, 'source_port'))
+        self._source_sid = int(self._getattr(kw, 'source_sid'))
         self._pointtype_str = self._getattr(kw, 'pointtype_str')
         self._datatype_str = self._getattr(kw, 'datatype_str')
         self._server_host = self._getattr(kw, 'server_host')
         self._server_port = int(self._getattr(kw, 'server_port'))
+        self._server_sid = int(self._getattr(kw, 'server_sid'))
+        self._server_null_value = self._getattr(kw, 'server_null_value')
         self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
         self._shutdown_delay_sec = int(self._getattr(kw, 'shutdown_delay_sec'))
     
@@ -151,7 +157,11 @@ class ModbusController:
         ModbusTarget._default_addr_start_from = self._addr_start_from
 
         PyModbusTcpSource._default_port = self._source_port
+        PyModbusTcpSource._default_slave_id = self._source_sid
+
         HslModbusTcpSource._default_port = self._source_port
+        HslModbusTcpSource._default_slave_id = self._source_sid
+
         JsonSource._default_folder = Path(self._register_folder)
 
     def Start(self):
@@ -203,12 +213,14 @@ class ModbusController:
 
     def WriteContext(self):
         for src in self.mirror.src_list:
-            if src.values is None: continue
+            new_val = src.values
+            if new_val is None:
+                new_val = src.dataType.Encode(self._server_null_value)
 
             self.server.context[0x00].setValues(
                 fx=src.target.pointType.fx,
                 address=src.target.address_from0,
-                values=src.values,
+                values=new_val,
                 writeback=False,
             )
 

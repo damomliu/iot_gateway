@@ -5,7 +5,7 @@ from ._base import SourcePairBase, ClientBase, TargetBase, _get, _clean_dict
 
 
 class PyModbusTcpSource(SourcePairBase):
-    _default_slave_id = 0x00
+    _default_slave_id = 0x01
     _default_port = None
 
     def __init__(
@@ -20,7 +20,7 @@ class PyModbusTcpSource(SourcePairBase):
 
         super().__init__(client, target, desc)
         self.address = address
-        self.slave_id = slave_id or __class__._default_slave_id
+        self.slave_id = int(slave_id or __class__._default_slave_id)
         self.pointType = PointType(point_type_str) if point_type_str else self.target.pointType
         self.dataType = DataType(data_type_str, self.pointType) if data_type_str else self.target.dataType
         self.addr_start_from = addr_start_from if addr_start_from else self.target.addr_start_from
@@ -60,7 +60,7 @@ class PyModbusTcpSource(SourcePairBase):
             client=client,
             target=target,
             address=int(kw['SourceAddress']),
-            slave_id=cls._default_slave_id,
+            slave_id=kw.get("SourceDeviceID"),
             point_type_str=kw.get('SourcePointType'),
             data_type_str=kw.get('SourceDataype'),
             addr_start_from=kw.get('addr_start_from'),
@@ -75,6 +75,7 @@ class PyModbusTcpSource(SourcePairBase):
             self.values = val[:len(self)]
             return 1,val
         else:
+            self.values = None
             return 0,val
 
     def Write(self, values):
@@ -120,13 +121,13 @@ class PyModbusTcpClient(ClientBase, ModbusTcpClient):
             return 0
 
     def Read(self, point_type:PointType, address_from0:int, count:int, unit:int):
-        req,val = point_type.RequestValue(self, address_from0, count, unit_id=unit)
+        req,val = point_type.RequestValue(self, address_from0, count, unit=unit)
         return req,val
 
     def Write(self, values, point_type:PointType, address_from0:int, unit:int):
         try:
             writeFunc = point_type._WriteFunc(self)
-            req = writeFunc(address_from0, values, unit_id=unit)
+            req = writeFunc(address_from0, values, unit=unit)
             if req.isError():
                 return 0,req
             else:

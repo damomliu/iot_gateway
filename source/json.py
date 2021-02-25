@@ -89,6 +89,7 @@ class JsonSource(SourcePairBase):
 
             return 1,None
         except Exception as e:
+            self.values = None
             return 0,e
 
     def Write(self, values=None):

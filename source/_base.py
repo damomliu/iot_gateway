@@ -11,6 +11,7 @@ class SourcePairBase(metaclass=abc.ABCMeta):
         self.client = client
         self.target = target
         self.desc = desc if desc else ''
+        self.values = None
 
     @property
     def length(self): return self.target.length
@@ -47,7 +48,7 @@ class ClientBase(metaclass=abc.ABCMeta):
         ])
 
     @abc.abstractmethod
-    def __eq__(self, o) -> bool: raise NotImplemented
+    def __eq__(self, o) -> bool: raise NotImplementedError
 
     @abc.abstractmethod
     def Connect(self):
