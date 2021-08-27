@@ -42,7 +42,7 @@ class ModbusController:
         )
         self.context = LinkedSlaveContext.ServerContext(
             ctrl=self,
-            zero_mode=bool(not self._addr_start_from),
+            zero_mode=True,
             single_slave_mode=True,
         )
         self.server = factory.SERVER[server_mode](
