@@ -27,11 +27,11 @@ class ModbusController:
     _default_shutdown_delay_sec = 0
 
     def __init__(self,
-        logger=None,
-        mirror_mode: str = factory.DEFAULT_MIRROR_MODE,
-        server_mode: str = factory.DEFAULT_SERVER_MODE,
-        **kw,
-    ):
+                 logger=None,
+                 mirror_mode: str = factory.DEFAULT_MIRROR_MODE,
+                 server_mode: str = factory.DEFAULT_SERVER_MODE,
+                 **kw,
+                 ):
         self._SetLogger(logger)
         self._SetConfig(**kw)
         self._SetSources()
@@ -84,13 +84,14 @@ class ModbusController:
         self._server_port = int(self._getattr(kw, 'server_port'))
         self._server_sid = int(self._getattr(kw, 'server_sid'))
         self._server_null_value = self._getattr(kw, 'server_null_value')
-        self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
+        self._mirror_refresh_sec = float(
+            self._getattr(kw, 'mirror_refresh_sec'))
         self._shutdown_delay_sec = int(self._getattr(kw, 'shutdown_delay_sec'))
-    
+
     def _PreCheck(self):
         assert all([
-            self._addr_start_from in [0,1],
-            self._server_host.replace('.','').isdigit(),
+            self._addr_start_from in [0, 1],
+            self._server_host.replace('.', '').isdigit(),
         ])
 
     @classmethod
@@ -128,13 +129,17 @@ class ModbusController:
                     if protocol_str.startswith('modbus_tcp'):
                         # add TcpSource
                         if protocol_str.endswith('tcp1'):
-                            src_list.append(PyModbusTcpSource.FromDict(**r, is_writable=False))
+                            src_list.append(PyModbusTcpSource.FromDict(
+                                **r, is_writable=False, ))
                         elif protocol_str.endswith('tcp1rw'):
-                            src_list.append(PyModbusTcpSource.FromDict(**r, is_writable=True))
+                            src_list.append(PyModbusTcpSource.FromDict(
+                                **r, is_writable=True))
                         elif protocol_str.endswith('tcp2'):
-                            src_list.append(HslModbusTcpSource.FromDict(**r, is_writable=False))
+                            src_list.append(HslModbusTcpSource.FromDict(
+                                **r, is_writable=False))
                         elif protocol_str.endswith('tcp2rw'):
-                            src_list.append(HslModbusTcpSource.FromDict(**r, is_writable=True))
+                            src_list.append(HslModbusTcpSource.FromDict(
+                                **r, is_writable=True))
 
                     elif protocol_str == 'json':
                         # add JsonSource
@@ -197,7 +202,6 @@ class ModbusController:
         self.__shutdown_request = True
         self.__shutdownEvent.wait()
         self.logger.info('Ctrl is closed completely.')
-        
 
     def UpdateLoop(self):
         self.mirror.Connect()
@@ -217,6 +221,11 @@ class ModbusController:
             if new_val is None:
                 new_val = src.dataType.Encode(self._server_null_value)
 
+            else:
+                _encoded = src.dataType.Decode(new_val)
+                _formulated = _encoded / 10
+                new_val = src.target.dataType.Encode(_formulated)
+
             self.server.context[0x00].setValues(
                 fx=src.target.pointType.fx,
                 address=src.target.address_from0,
@@ -230,10 +239,12 @@ class ModbusController:
 
 class MetaSingleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
+
 
 class ControllerSingleton(ModbusController, metaclass=MetaSingleton):
     pass

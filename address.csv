@@ -1,53 +1,31 @@
-﻿SourceProtocol,SourceIP,SourcePort,SourceDeviceID,SourceAddress,SourceDesc,SourcePointType,DataType,TargetAddress,TargetDesc
----,---,---,"",---,---,---,---,---,---
-modbus_tcp1(唯讀; pymodbus),(must),(預設502),"",(must),,co/di/hr/ir,"bool, int16/32/64, uint16/32/64, float16/32/64",(must),
-modbus_tcp1rw(可讀寫; pymodbus),(must),(預設502),"",(must),,co/hr,同上,(must),
-json (暫存數據源),(x),(x),"",(x),,co/hr,同上,(must),
-modbus_tcp2(唯讀; HSL),(must),(預設502),"",(must),,co/di/hr/ir,同上,(must),
-modbus_tcp2rw(可讀寫; HSL),(must),(預設502),"",(must),,co/hr,同上,(must),
----,---,---,"",---,---,---,---,---,---
-,,,"",,溫度,,,1,
-,,,"",,,,,3,
-,,,"",,,,,21,
-,,,"",,,,,23,
-,,,"",,,,,25,
-,,,"",,,,,27,
-,,,"",,,,,29,
-modbus_tcp1rw,192.168.4.150,"",,200,電池狀態,hr,float32,511,
-modbus_tcp2rw,192.168.4.150,"",,200,,hr,float32,513,
-,,,"",,,,,515,
-modbus_tcp1,192.168.4.150,"",,100,電池電量,ir,uint32,521,
-modbus_tcp2rw,192.168.4.150,"",,100,,ir,uint32,523,
-,,,"",,,,,525,
-,,,"",,電池放電量,,,531,
-,,,"",,,,,533,
-,,,"",,,,,535,
-modbus_tcp1rw,192.168.4.150,"",,200,台電用電量,hr,float32,611,
-modbus_tcp1rw,192.168.4.150,"",,200,電池放電量,hr,float32,613,
-json,,,"",,使用者用電量,,,615,
-json,,,"",,契約容量,,int32,621,
-json,,,"",,設定容量,,int64,623,
----,---,---,"",---,---,---,---,---,---
-modbus_tcp1,192.168.4.150,,"",100,TestingOnly,co,bool,901,
-modbus_tcp1rw,192.168.4.150,,"",101,,co,bool,902,
-modbus_tcp2rw,192.168.4.150,"",,101,"",co,bool,903,
-modbus_tcp1,192.168.4.150,,"",100,,di,bool,901,
-modbus_tcp2,192.168.4.150,,"",101,,di,bool,902,
-modbus_tcp1rw,192.168.4.150,,"",100,,hr,int16,901,
-modbus_tcp1rw,192.168.4.150,,"",200,,hr,float32,902,
-modbus_tcp1rw,192.168.4.150,,"",300,,hr,float64,903,!! address 衝突
-modbus_tcp1,192.168.4.150,,"",300,,hr,float64,908,
-modbus_tcp1,192.168.4.150,,"",100,,ir,uint32,912,
-modbus_tcp1rw,192.168.4.150,,"",100,,hr,uint16,914,相同 addr 不同 datatype
-modbus_tcp1rw,192.168.4.150,,"",100,,hr,float16,915,相同 addr 不同 datatype
-modbus_tcp1rw,192.168.4.150,,"",100,,hr,int32,917,相同 addr 不同 datatype
-modbus_tcp1rw,192.168.4.150,,"",100,,hr,uint32,919,相同 addr 不同 datatype
-modbus_tcp1rw,192.168.4.150,,"",100,,hr,float32,921,相同 addr 不同 datatype
-modbus_tcp1rw,192.168.4.150,,"",100,,hr,int64,923,相同 addr 不同 datatype
-modbus_tcp1rw,192.168.4.150,,"",100,,hr,uint64,925,!! address 衝突
-modbus_tcp1rw,192.168.4.150,,"",100,,hr,float64,927,相同 addr 不同 datatype
-,,,"",,,,,,
-,192.168.4.139,,"",1,,hr,float32,,
-,192.168.4.139,,"",21,,hr,float64,,
-,192.168.4.139,,"",511,,hr,int32,,
-,192.168.4.139,,"",521,,,,,
+﻿SourceProtocol,SourceIP,SourcePort,SourceDeviceID,SourceAddress,SourceDesc,SourcePointType,DataType,TargetAddress,TargetDesc,SourceDataype
+---,---,---,,---,---,---,---,---,---,
+modbus_tcp1,10.70.60.25,,,1,FZ-02,ir,,1,,int16
+modbus_tcp1,10.70.60.25,,,2,RF-18,ir,,3,,int16
+,10.70.60.25,,,3,,,,5,,
+,10.70.60.25,,,4,,,,7,,
+,10.70.60.25,,,5,,,,9,,
+,10.70.60.25,,,6,,,,11,,
+,10.70.60.25,,,7,,,,13,,
+,10.70.60.25,,,8,,,,15,,
+,10.70.60.25,,,9,,,,17,,
+,10.70.60.25,,,10,,,,19,,
+---,---,---,,---,---,---,---,---,---,
+modbus_tcp1,10.70.60.26,,,1,IB-05,ir,,21,,int16
+modbus_tcp1,10.70.60.26,,,2,IB-06,ir,,23,,int16
+modbus_tcp1,10.70.60.26,,,3,IB-07,ir,,25,,int16
+modbus_tcp1,10.70.60.26,,,4,IB-09,ir,,27,,int16
+modbus_tcp1,10.70.60.26,,,5,IB-10,ir,,29,,int16
+,10.70.60.26,,,6,,,,31,,
+,10.70.60.26,,,7,,,,33,,
+,10.70.60.26,,,8,,,,35,,
+,10.70.60.26,,,9,,,,37,,
+,10.70.60.26,,,10,,,,39,,
+---,---,---,,---,---,---,---,---,---,
+modbus_tcp1,10.70.60.27,,,1,IB-08,ir,,41,,int16
+modbus_tcp1,10.70.60.27,,,2,IB-03,ir,,43,,int16
+modbus_tcp1,10.70.60.27,,,3,IB-02,ir,,45,,int16
+modbus_tcp1,10.70.60.27,,,4,IB-01,ir,,47,,int16
+modbus_tcp1,10.70.60.27,,,5,RF-17,ir,,49,,int16
+modbus_tcp1,10.70.60.27,,,6,TSC-01,ir,,51,,int16
+modbus_tcp1,10.70.60.27,,,7,TSC-02,ir,,53,,int16
