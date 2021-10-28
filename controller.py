@@ -223,7 +223,25 @@ class ModbusController:
 
             else:
                 _encoded = src.dataType.Decode(new_val)
-                _formulated = _encoded / 10
+                if src.formula_x_str:
+                    try:
+                        # 驗證公式的合法性
+                        if not all(chr_ in factory.FORMULA_X_VALIABLE_CHRS for chr_ in src.formula_x_str):
+                            raise ValueError(
+                                f'Invalid formula_x_str: {src.formula_x_str}')
+
+                        _formulated = eval(
+                            src.formula_x_str.replace(
+                                'x', '{x}'
+                            ).replace(
+                                'X', '{x}'
+                            ).format(x=_encoded)
+                        )
+                    except Exception as e:
+                        self.logger.warning(f'Invalid formula: {e}')
+                        _formulated = _encoded
+                else:
+                    _formulated = _encoded
                 new_val = src.target.dataType.Encode(_formulated)
 
             self.server.context[0x00].setValues(

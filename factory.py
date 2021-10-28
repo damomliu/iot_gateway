@@ -15,3 +15,8 @@ MIRROR = {
     'async': 0
 }
 DEFAULT_MIRROR_MODE = 'sync'
+
+FORMULA_X_VALIABLE_CHRS = [
+    '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    '+', '-', '*', '/', '(', ')', 'x', 'X'
+]
