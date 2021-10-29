@@ -72,7 +72,7 @@ class HslModbusTcpSource(SourceBase):
         target = ModbusTarget.FromDict(**kw)
         kwargs = _clean_dict(
             ip=kw['SourceIP'],
-            port=_get(kw, 'SourcePort', cls._default_port),
+            port=int(_get(kw, 'SourcePort', cls._default_port)),
             address=int(kw['SourceAddress']),
             target=target,
             slave_id=kw.get("SourceDeviceID"),

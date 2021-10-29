@@ -59,7 +59,7 @@ class PyModbusTcpSource(SourcePairBase):
         target = ModbusTarget.FromDict(**kw)
         client = PyModbusTcpClient(
             ip=kw['SourceIP'],
-            port=_get(kw, 'SourcePort', cls._default_port),
+            port=int(_get(kw, 'SourcePort', cls._default_port)),
         )
         kwargs = _clean_dict(
             client=client,
