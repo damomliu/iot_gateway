@@ -17,14 +17,19 @@ class SyncMirror():
 
     def Connect(self):
         for src in self.src_list[:]:
-            res,info = src.Connect()
-            if res:
-                if info:
-                    self.logger.debug(' / '.join([f'connected to {src} OK'] + info))
+            try:
+                res,info = src.Connect()
+                if res:
+                    if info:
+                        self.logger.debug(' / '.join([f'connected to {src} OK'] + info))
+                    else:
+                        self.logger.debug(f'connected to {src} OK')
                 else:
-                    self.logger.debug(f'connected to {src} OK')
-            else:
-                self.logger.warning(f'...not connected : {src} / {info}')
+                    self.logger.warning(f'...not connected : {src} / {info}')
+                    self.src_list.remove(src)
+
+            except Exception as e:
+                self.logger.error(f'Connect failed {src} \n{e}')
                 self.src_list.remove(src)
 
         self.logger.info(f'Mirroring from [{len(self.src_list)}] sources')
@@ -45,11 +50,18 @@ class SyncMirror():
     def Read(self):
         debug_msg_interval_sec = 60
         for src in self.src_list:
-            req,val = src.Read()
-            if not req:
-                self.logger.error(f'Read failed {src} {val}')
-            elif time() % debug_msg_interval_sec < 1:
-                self.logger.debug(f'{src} val = {val}')
+            try:
+                req,val = src.Read()
+                if not req:
+                    self.logger.error(f'Read failed {src} {val}')
+                    self.src_list.remove(src)
+
+                elif time() % debug_msg_interval_sec < 1:
+                    self.logger.debug(f'{src} val = {val}')
+
+            except Exception as e:
+                self.logger.error(f'Read failed {src} \n{e}')
+                self.src_list.remove(src)
 
     def _MatchSourceList(self, fx, address):
         matched_list = []
