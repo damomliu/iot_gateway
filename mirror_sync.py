@@ -16,21 +16,24 @@ class SyncMirror():
                 return -1
 
     def Connect(self):
-        for src in self.src_list[:]:
+        # for src in self.src_list[:]:
+        while self.src_list.not_started:
+            src = self.src_list.not_started[0]
             try:
                 res,info = src.Connect()
                 if res:
+                    self.src_list.set_connected(src)
                     if info:
                         self.logger.debug(' / '.join([f'connected to {src} OK'] + info))
                     else:
                         self.logger.debug(f'connected to {src} OK')
                 else:
                     self.logger.warning(f'...not connected : {src} / {info}')
-                    self.src_list.remove(src)
+                    self.src_list.retire_by_client(src)
 
             except Exception as e:
                 self.logger.error(f'Connect failed {src} \n{e}')
-                self.src_list.remove(src)
+                self.src_list.retire_by_client(src)
 
         self.logger.info(f'Mirroring from [{len(self.src_list)}] sources')
         self.logger.info(dict(self.src_list.counter))
@@ -38,6 +41,7 @@ class SyncMirror():
     def Disconnect(self):
         for src in self.src_list:
             res = src.Disconnect()
+            self.src_list.reset(src)
             if res:
                 self.logger.info(f'{src} is disconnected.')
 
@@ -49,19 +53,21 @@ class SyncMirror():
 
     def Read(self):
         debug_msg_interval_sec = 60
-        for src in self.src_list:
+        for src in self.src_list.readable:
             try:
                 req,val = src.Read()
-                if not req:
-                    self.logger.error(f'Read failed {src} {val}')
-                    self.src_list.remove(src)
+                if req:
+                    self.src_list.set_reading(src)
+                    if time() % debug_msg_interval_sec < 1:
+                        self.logger.debug(f'{src} val = {val}')
 
-                elif time() % debug_msg_interval_sec < 1:
-                    self.logger.debug(f'{src} val = {val}')
+                else:
+                    self.logger.error(f'Read failed {src} {val}')
+                    self.src_list.retire(src)
 
             except Exception as e:
                 self.logger.error(f'Read failed {src} \n{e}')
-                self.src_list.remove(src)
+                self.src_list.retire(src)
 
     def _MatchSourceList(self, fx, address):
         matched_list = []

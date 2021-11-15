@@ -37,7 +37,7 @@ class PyModbusTcpSource(SourcePairBase):
 
     def __repr__(self) -> str:
         if self.desc:
-            rep_str = f'<{__class__.__name__}/{self.desc}'
+            rep_str = f'<{__class__.__name__}/{self.desc}({self.status})'
         else:
             rep_str = f'<{__class__.__name__}@{self.client.ip}/{self.pointType.type_str}_{self.dataType.repr_short}_{self.address}'
             if len(self) > 1: rep_str += f'(*{len(self)})'

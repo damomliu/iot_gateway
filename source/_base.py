@@ -1,6 +1,7 @@
 import abc
 from os import remove, replace
 from . import PointType, DataType
+from . import SourceStatus
 
 
 class SourcePairBase(metaclass=abc.ABCMeta):
@@ -12,6 +13,7 @@ class SourcePairBase(metaclass=abc.ABCMeta):
         self.target = target
         self.desc = desc if desc else ''
         self.values = None
+        self.status = SourceStatus.NOT_STARTED
 
     @property
     def length(self): return self.target.length
