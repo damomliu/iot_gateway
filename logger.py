@@ -1,5 +1,6 @@
 import logging
 import traceback
+from logging.handlers import TimedRotatingFileHandler
 
 class OneLogger(logging.getLoggerClass()):
     def __init__(self, logger_name, screen=True, log_path=None, level_str='info', rotate=False):
@@ -29,7 +30,7 @@ class OneLogger(logging.getLoggerClass()):
     def set_logfile(self, filepath, rotate=False):
         self.log_path = filepath
         if rotate:
-            _handler = logging.handlers.TimedRotatingFileHandler(self.log_path, when='midnight')
+            _handler = TimedRotatingFileHandler(self.log_path, when='midnight')
         else:
             _handler = logging.FileHandler(self.log_path)
 

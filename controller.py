@@ -10,7 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
-__version__ = (1, 2, 0)
+__version__ = (1, 2, 1, 'pre')
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
@@ -31,10 +31,12 @@ class ModbusController:
 
     def __init__(self,
         logger=None,
+        verbose=False,
         mirror_mode: str = factory.DEFAULT_MIRROR_MODE,
         server_mode: str = factory.DEFAULT_SERVER_MODE,
         **kw,
     ):
+        self.verbose = verbose
         self._SetLogger(logger)
         self._SetConfig(**kw)
         self._SetSources()
@@ -206,6 +208,7 @@ class ModbusController:
         self.mirror.Connect()
 
         _tag = True
+        _times = []
         while True:
             self.mirror.Read()
             self.WriteContext()
@@ -213,6 +216,16 @@ class ModbusController:
             if _tag:
                 _tag = False
                 self.__runserver_request = True
+
+            if self.verbose:
+                _times.append(time.time())
+                if len(_times) > 1:
+                    print(f"[{len(_times)-1}] {_times[-1] - _times[-2] :.2f}")
+                    if len(_times) > 10:
+                        time_span = _times[-1] - _times[0]
+                        time_avg = time_span / (len(_times) - 1)
+                        self.logger.info(f"UpdateLoop interval: {time_avg:.1f} sec")
+                        _times = _times[-1:]
 
     def WriteContext(self):
         for src in self.mirror.src_list:
