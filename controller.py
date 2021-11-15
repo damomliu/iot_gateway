@@ -10,6 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
+__version__ = (1, 2, 0)
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
@@ -25,6 +26,8 @@ class ModbusController:
     _default_server_null_value = -99
     _default_mirror_refresh_sec = 0.5
     _default_shutdown_delay_sec = 0
+
+    __version__ = __version__
 
     def __init__(self,
         logger=None,
