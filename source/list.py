@@ -1,5 +1,5 @@
 from collections import Counter
-from . import SourceStatus
+from .status import SourceStatus
 
 
 class MirrorSourceList(list):
@@ -8,14 +8,6 @@ class MirrorSourceList(list):
         self.mirror = mirror
         # for arg in args:
         #     self.append(arg)
-
-    @property
-    def not_started(self):
-        return [src for src in self if src.status == SourceStatus.NOT_STARTED]
-
-    @property
-    def readable(self):
-        return [src for src in self if src.status.readable]
 
     def append(self, new_src):
         if self.mirror._Validate(new_src) is not -1:
@@ -30,22 +22,32 @@ class MirrorSourceList(list):
     def reset(self, src):
         src.status = SourceStatus.NOT_STARTED
 
-    def set_connected(self, src):
-        src.status = SourceStatus.CONNECTED
+    @property
+    def wait_connect(self):
+        return [src for src in self if src.status.wait_connect]
+
+    def set_connected(self, connected_src):
+        """ 將已連線的 src, 及共用同個 Client 的其他 src 狀態設為 CONNECTED"""
+        for src in self:
+            if src.client == connected_src.client:
+                src.status = SourceStatus.CONNECTED
+
+    def set_connect_failed(self, failed_src):
+        for src in self:
+            if src.client == failed_src.client:
+                src.status = SourceStatus.CONNECTED_FAILED
+
+    @property
+    def wait_read(self):
+        return [src for src in self if src.status.wait_read]
 
     def set_reading(self, src):
         src.status = SourceStatus.READING
 
-    def retire(self, src):
-        # self.remove(src)
-        # self._retired.append(src)
+    def set_read_failed(self, src):
         src.status = SourceStatus.READING_FAILED
 
-    def retire_by_client(self, failed_src):
-        for src in self:
-            if src.client == failed_src.client:
-                # self.retired(src)
-                src.status = SourceStatus.CONNECTED_FAILED
+
 
     @property
     def counter(self): return Counter(src.__class__.__name__ for src in self)

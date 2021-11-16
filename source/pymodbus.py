@@ -37,12 +37,13 @@ class PyModbusTcpSource(SourcePairBase):
 
     def __repr__(self) -> str:
         if self.desc:
-            rep_str = f'<{__class__.__name__}/{self.desc}({self.status})'
+            rep_str = f'<{self.desc}({self.status.name})>'
+            return rep_str
+
         else:
             rep_str = f'<{__class__.__name__}@{self.client.ip}/{self.pointType.type_str}_{self.dataType.repr_short}_{self.address}'
             if len(self) > 1: rep_str += f'(*{len(self)})'
-
-        return rep_str + f' : {self.target.repr_postfix}'
+            return rep_str + f' : {self.target.repr_postfix}'
 
     @property
     def address_from0(self): return self.address - self.addr_start_from
@@ -96,6 +97,7 @@ class PyModbusTcpSource(SourcePairBase):
 
 class PyModbusTcpClient(ClientBase, ModbusTcpClient):
     def __init__(self, ip, port):
+        port = int(port)
         ClientBase.__init__(self, ip, port)
         ModbusTcpClient.__init__(self, ip, port)
 
@@ -164,7 +166,7 @@ class ModbusTarget(TargetBase):
         assert all([
             isinstance(self.address, int),
             self.addr_start_from in [0,1],
-        ])        
+        ])
 
     def __repr__(self):
         rep_str = f'<{__class__.__name__}/{self.pointType.type_str}_{self.dataType.repr_short}_{self.address}'

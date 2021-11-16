@@ -14,6 +14,11 @@ class SourceStatus(Enum):
     READING = 2
     READING_FAILED = -2  # Client connectd, but failed to read data from source
 
+    DISCONNECTED = -3
+
     @property
-    def readable(self):
-        return self in [SourceStatus.CONNECTED, SourceStatus.READING]
+    def wait_connect(self):
+        return self in (SourceStatus.MIRRORED, SourceStatus.NOT_STARTED)
+    @property
+    def wait_read(self):
+        return self in (SourceStatus.CONNECTED, SourceStatus.READING)
