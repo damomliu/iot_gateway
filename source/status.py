@@ -10,6 +10,7 @@ class SourceStatus(Enum):
 
     CONNECTED = 1
     CONNECTED_FAILED = -1
+    RETRY_FAILED = -11
 
     READING = 2
     READING_FAILED = -2  # Client connectd, but failed to read data from source

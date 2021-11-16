@@ -1,5 +1,6 @@
 from time import time
 from source import MirrorSourceList
+from source.status import SourceStatus
 
 class SyncMirror():
     def __init__(self, src_list, logger) -> None:
@@ -8,6 +9,11 @@ class SyncMirror():
         for src in src_list:
             self.src_list.append(src)
 
+    def log_status(self):
+        self.logger.info(f'Mirroring from {len(self.src_list.client_list)} clients / {len(self.src_list)} sources')
+        self.logger.info(self.src_list.status)
+        self.logger.info(dict(self.src_list.counter))
+
     def _Validate(self, new_src):
         for src in self.src_list:
             if src.target.pointType.type_str != new_src.target.pointType.type_str: continue
@@ -15,27 +21,47 @@ class SyncMirror():
                 self.logger.warning(f'Address conflict!! src={src} / new_src={new_src}')
                 return -1
 
-    def Connect(self):
+    def connect_all(self):
         while self.src_list.wait_connect:
             src = self.src_list.wait_connect[0]
-            try:
-                res,info = src.Connect()
-                if res:
-                    self.src_list.set_connected(src)
-                    if info:
-                        self.logger.debug(' / '.join([f'connected to {src} OK'] + info))
-                    else:
-                        self.logger.info(f'connected to {src} OK')
+            self._connect_one(src)
+
+        self.log_status()
+
+    def connect_retry(self):
+        self.logger.info('Retrying...')
+        while self.src_list.wait_retry:
+            src = self.src_list.wait_retry[0]
+            self._connect_one(src, retry=True)
+
+        for src in self.src_list.retry_failed:
+            src.status = SourceStatus.CONNECTED_FAILED
+
+        self.log_status()
+
+    def _connect_one(self, src, retry=False):
+        failed = False
+        try:
+            res,info = src.Connect()
+            if res:
+                self.src_list.set_connected(src)
+                if info:
+                    self.logger.debug(' / '.join([f'connected to {src} OK'] + info))
                 else:
-                    self.logger.warning(f'...not connected : {src} / {info}')
-                    self.src_list.set_connect_failed(src)
+                    self.logger.info(f'connected to {src} OK')
+            else:
+                self.logger.warning(f'...not connected : {src} / {info}')
+                failed = True
 
-            except Exception as e:
-                self.logger.error(f'Connect failed {src} \n{e}')
+        except Exception as e:
+            self.logger.error(f'Connect failed {src} \n{e}')
+            failed = True
+
+        if failed:
+            if retry:
+                self.src_list.set_retry_failed(src)
+            else:
                 self.src_list.set_connect_failed(src)
-
-        self.logger.info(f'Mirroring from [{len(self.src_list)}] sources')
-        self.logger.info(dict(self.src_list.counter))
 
     def Disconnect(self):
         for src in self.src_list:
