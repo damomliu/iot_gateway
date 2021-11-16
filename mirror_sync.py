@@ -16,9 +16,8 @@ class SyncMirror():
                 return -1
 
     def Connect(self):
-        # for src in self.src_list[:]:
-        while self.src_list.not_started:
-            src = self.src_list.not_started[0]
+        while self.src_list.wait_connect:
+            src = self.src_list.wait_connect[0]
             try:
                 res,info = src.Connect()
                 if res:
@@ -26,14 +25,14 @@ class SyncMirror():
                     if info:
                         self.logger.debug(' / '.join([f'connected to {src} OK'] + info))
                     else:
-                        self.logger.debug(f'connected to {src} OK')
+                        self.logger.info(f'connected to {src} OK')
                 else:
                     self.logger.warning(f'...not connected : {src} / {info}')
-                    self.src_list.retire_by_client(src)
+                    self.src_list.set_connect_failed(src)
 
             except Exception as e:
                 self.logger.error(f'Connect failed {src} \n{e}')
-                self.src_list.retire_by_client(src)
+                self.src_list.set_connect_failed(src)
 
         self.logger.info(f'Mirroring from [{len(self.src_list)}] sources')
         self.logger.info(dict(self.src_list.counter))
@@ -53,7 +52,7 @@ class SyncMirror():
 
     def Read(self):
         debug_msg_interval_sec = 60
-        for src in self.src_list.readable:
+        for src in self.src_list.wait_read:
             try:
                 req,val = src.Read()
                 if req:
@@ -63,11 +62,11 @@ class SyncMirror():
 
                 else:
                     self.logger.error(f'Read failed {src} {val}')
-                    self.src_list.retire(src)
+                    self.src_list.set_read_failed(src)
 
             except Exception as e:
                 self.logger.error(f'Read failed {src} \n{e}')
-                self.src_list.retire(src)
+                self.src_list.set_read_failed(src)
 
     def _MatchSourceList(self, fx, address):
         matched_list = []
