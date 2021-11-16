@@ -10,7 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
-__version__ = (1, 2, 1, 'pre')
+__version__ = (1, 2, 2, 'pre')
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
@@ -25,6 +25,7 @@ class ModbusController:
     _default_server_sid = 0x00
     _default_server_null_value = -99
     _default_mirror_refresh_sec = 0.5
+    _default_mirror_retry_sec = 10 * 60
     _default_shutdown_delay_sec = 0
 
     __version__ = __version__
@@ -57,6 +58,7 @@ class ModbusController:
         )
         self.server.Setup(self.context, allow_reuse_address=True)
 
+        self.__read_request = False
         self.__runserver_request = False
         self.__shutdown_request = False
         self.__shutdownEvent = Event()
@@ -90,6 +92,7 @@ class ModbusController:
         self._server_sid = int(self._getattr(kw, 'server_sid'))
         self._server_null_value = self._getattr(kw, 'server_null_value')
         self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
+        self._mirror_retry_sec = int(self._getattr(kw, 'mirror_retry_sec'))
         self._shutdown_delay_sec = int(self._getattr(kw, 'shutdown_delay_sec'))
     
     def _PreCheck(self):
@@ -171,8 +174,13 @@ class ModbusController:
 
     def Start(self):
         self.__runserver_request = False
-        mirror_thread = Thread(target=self.UpdateLoop, name='CtrlMirror')
-        mirror_thread.start()
+        # mirror_thread = Thread(target=self.UpdateLoop, name='CtrlMirror')
+        # mirror_thread.start()
+        connect_thread = Thread(target=self._connect_loop, name='CtrlConnect')
+        connect_thread.start()
+
+        readwrite_thread = Thread(target=self._readwrite_loop, name='CtrlReadWrite')
+        readwrite_thread.start()
 
         try:
             while not self.__runserver_request:
@@ -202,10 +210,18 @@ class ModbusController:
         self.__shutdown_request = True
         self.__shutdownEvent.wait()
         self.logger.info('Ctrl is closed completely.')
-        
 
-    def UpdateLoop(self):
-        self.mirror.Connect()
+    def _connect_loop(self):
+        self.mirror.connect_all()
+        self.__read_request = True
+
+        while True:
+            time.sleep(self._mirror_retry_sec)
+            self.mirror.connect_retry()
+
+    def _readwrite_loop(self):
+        while not self.__read_request:
+            pass
 
         _tag = True
         _times = []
