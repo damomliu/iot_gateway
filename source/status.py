@@ -23,3 +23,6 @@ class SourceStatus(Enum):
     @property
     def wait_read(self):
         return self in (SourceStatus.CONNECTED, SourceStatus.READING)
+    @property
+    def something_failed(self):
+        return self.value < 0
