@@ -10,7 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
-__version__ = (1, 2, 2, 'pre')
+__version__ = (1, 2, 3, 'pre')
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
@@ -212,12 +212,19 @@ class ModbusController:
         self.logger.info('Ctrl is closed completely.')
 
     def _connect_loop(self):
-        self.mirror.connect_all()
-        self.__read_request = True
+        try:
+            self.mirror.connect_all()
+            self.__read_request = True
+        except Exception as e:
+            self.logger.error(f'Ctrl connect_loop error: {e}')
+            self.Stop()
 
         while True:
             time.sleep(self._mirror_retry_sec)
-            self.mirror.connect_retry()
+            try:
+                self.mirror.connect_retry()
+            except Exception as e:
+                self.logger.error(f'Ctrl connect_loop(retry) error: {e}')
 
     def _readwrite_loop(self):
         while not self.__read_request:

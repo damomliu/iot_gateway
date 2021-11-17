@@ -11,8 +11,12 @@ class SyncMirror():
 
     def log_status(self):
         self.logger.info(f'Mirroring from {len(self.src_list.client_list)} clients / {len(self.src_list)} sources')
-        self.logger.info(self.src_list.status)
-        self.logger.info(dict(self.src_list.counter))
+
+        client_summary, mixed_list = self.src_list.status
+        self.logger.info(f'\tby client {client_summary}')
+        self.logger.info(f'\tby source {dict(self.src_list.counter)}')
+        if mixed_list:
+            self.logger.info(f'\tmixed detail: {mixed_list}')
 
     def _Validate(self, new_src):
         for src in self.src_list:

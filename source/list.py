@@ -71,7 +71,7 @@ class MirrorSourceList(list):
             else:
                 counter_dict[src_class] = Counter([src_status])
 
-        return counter_dict
+        return {k: dict(v) for k,v in counter_dict.items()}
 
     @property
     def client_list(self) -> list:
@@ -82,7 +82,7 @@ class MirrorSourceList(list):
         return _list
 
     @property
-    def status(self) -> dict:
+    def status(self) -> list:
         counter = Counter()
         mixed_dict = {}
         for client in self.client_list:
@@ -92,11 +92,24 @@ class MirrorSourceList(list):
                 counter.update([sources[0].status.name])
             else:
                 counter.update(["mixed"])
-                mixed_dict[client] = sources
-        
-        _dict = dict(counter)
-        if mixed_dict:
-            _dict['mixed_list'] = mixed_dict
+                mixed_dict[str(client)] = _client_summary(sources)
 
-        return _dict
+        return [dict(counter), mixed_dict]
 
+
+def _client_summary(source_list, expand_failed=True, expand_success=False):
+    counter = Counter()
+    success_list = []
+    failed_list = []
+    for src in source_list:
+        counter.update([src.status.name])
+        if src.status.something_failed:
+            failed_list.append(str(src))
+        else:
+            success_list.append(str(src))
+    summary = [f'{k} * {v}' for k,v in counter.items()]
+    if expand_failed:
+        summary.extend(failed_list)
+    if expand_success:
+        summary.extend(success_list)
+    return summary
