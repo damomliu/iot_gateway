@@ -10,7 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
-__version__ = (1, 2, 3, 'pre')
+__version__ = (1, 2, 4)
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
@@ -94,11 +94,11 @@ class ModbusController:
         self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
         self._mirror_retry_sec = int(self._getattr(kw, 'mirror_retry_sec'))
         self._shutdown_delay_sec = int(self._getattr(kw, 'shutdown_delay_sec'))
-    
+
     def _PreCheck(self):
         assert all([
-            self._addr_start_from in [0,1],
-            self._server_host.replace('.','').isdigit(),
+            self._addr_start_from in [0, 1],
+            self._server_host.replace('.', '').isdigit(),
         ])
 
     @classmethod
@@ -256,6 +256,29 @@ class ModbusController:
             if new_val is None:
                 new_val = src.dataType.Encode(self._server_null_value)
 
+            else:
+                _encoded = src.dataType.Decode(new_val)
+                if src.formula_x_str:
+                    try:
+                        # 驗證公式的合法性
+                        if not all(chr_ in factory.FORMULA_X_VALIABLE_CHRS for chr_ in src.formula_x_str):
+                            raise ValueError(
+                                f'Invalid formula_x_str: {src.formula_x_str}')
+
+                        _formulated = eval(
+                            src.formula_x_str.replace(
+                                'x', '{x}'
+                            ).replace(
+                                'X', '{x}'
+                            ).format(x=_encoded)
+                        )
+                    except Exception as e:
+                        self.logger.warning(f'Invalid formula: {e}')
+                        _formulated = _encoded
+                else:
+                    _formulated = _encoded
+                new_val = src.target.dataType.Encode(_formulated)
+
             self.server.context[0x00].setValues(
                 fx=src.target.pointType.fx,
                 address=src.target.address_from0,
@@ -269,10 +292,12 @@ class ModbusController:
 
 class MetaSingleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
+
 
 class ControllerSingleton(ModbusController, metaclass=MetaSingleton):
     pass
