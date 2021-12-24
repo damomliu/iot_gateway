@@ -10,7 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
-__version__ = (1, 2, 4)
+__version__ = (1, 2, 5)
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
@@ -26,6 +26,7 @@ class ModbusController:
     _default_server_null_value = -99
     _default_mirror_refresh_sec = 0.5
     _default_mirror_retry_sec = 10 * 60
+    _default_readwrite_retry_sec = 10 * 60
     _default_shutdown_delay_sec = 0
 
     __version__ = __version__
@@ -93,6 +94,7 @@ class ModbusController:
         self._server_null_value = self._getattr(kw, 'server_null_value')
         self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
         self._mirror_retry_sec = int(self._getattr(kw, 'mirror_retry_sec'))
+        self._readwrite_retry_sec = int(self._getattr(kw, 'readwrite_retry_sec'))
         self._shutdown_delay_sec = int(self._getattr(kw, 'shutdown_delay_sec'))
 
     def _PreCheck(self):
@@ -216,7 +218,7 @@ class ModbusController:
             self.mirror.connect_all()
             self.__read_request = True
         except Exception as e:
-            self.logger.error(f'Ctrl connect_loop error: {e}')
+            self.logger.error(f'(Connect-Loop) error: {e}')
             self.Stop()
 
         while True:
@@ -224,7 +226,7 @@ class ModbusController:
             try:
                 self.mirror.connect_retry()
             except Exception as e:
-                self.logger.error(f'Ctrl connect_loop(retry) error: {e}')
+                self.logger.error(f'(Retry-Loop) error: {e}')
 
     def _readwrite_loop(self):
         while not self.__read_request:
@@ -233,22 +235,29 @@ class ModbusController:
         _tag = True
         _times = []
         while True:
-            self.mirror.Read()
-            self.WriteContext()
-            time.sleep(self._mirror_refresh_sec)
-            if _tag:
-                _tag = False
-                self.__runserver_request = True
+            try:
+                self.mirror.Read()
+                self.WriteContext()
+                time.sleep(self._mirror_refresh_sec)
+                if _tag:
+                    _tag = False
+                    self.__runserver_request = True
 
-            if self.verbose:
-                _times.append(time.time())
-                if len(_times) > 1:
-                    print(f"[{len(_times)-1}] {_times[-1] - _times[-2] :.2f}")
-                    if len(_times) > 10:
-                        time_span = _times[-1] - _times[0]
-                        time_avg = time_span / (len(_times) - 1)
-                        self.logger.info(f"UpdateLoop interval: {time_avg:.1f} sec")
-                        _times = _times[-1:]
+                if self.verbose:
+                    _times.append(time.time())
+                    if len(_times) > 1:
+                        print(f"[{len(_times)-1}] {_times[-1] - _times[-2] :.2f}")
+                        if len(_times) > 10:
+                            time_span = _times[-1] - _times[0]
+                            time_avg = time_span / (len(_times) - 1)
+                            self.logger.info(f"(Readwrite-Loop) Interval: {time_avg:.1f} sec")
+                            _times = _times[-1:]
+
+            except Exception as e:
+                self.logger.error(f"(Readwrite-Loop) error: {e}")
+                self.logger.info('(Radwrite-Loop) pausing...')
+                time.sleep(self.adwrite_retry_sec)
+                self.logger.info('(Radwrite-Loop) resumed')
 
     def WriteContext(self):
         for src in self.mirror.src_list:
