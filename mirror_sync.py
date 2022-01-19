@@ -33,7 +33,7 @@ class SyncMirror():
         self.log_status()
 
     def connect_retry(self):
-        self.logger.info('Retrying...')
+        self.logger.info('(Retry-Loop) Checking connection status...')
         while self.src_list.wait_retry:
             src = self.src_list.wait_retry[0]
             self._connect_one(src, retry=True)
