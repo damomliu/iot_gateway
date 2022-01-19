@@ -10,7 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
-__version__ = (1, 2, 5)
+__version__ = (1, 2, '5+')
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
@@ -256,7 +256,7 @@ class ModbusController:
             except Exception as e:
                 self.logger.error(f"(Readwrite-Loop) error: {e}")
                 self.logger.info('(Radwrite-Loop) pausing...')
-                time.sleep(self.adwrite_retry_sec)
+                time.sleep(self._readwrite_retry_sec)
                 self.logger.info('(Radwrite-Loop) resumed')
 
     def WriteContext(self):
