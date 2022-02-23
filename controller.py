@@ -10,7 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
-__version__ = (1, 2, '5+')
+__version__ = (1, 2, 6)
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
@@ -184,6 +184,9 @@ class ModbusController:
         readwrite_thread = Thread(target=self._readwrite_loop, name='CtrlReadWrite')
         readwrite_thread.start()
 
+        read_recover_thread = Thread(target=self._readfail_recover_loop, name='CtrlReadfailRecover')
+        read_recover_thread.start()
+
         try:
             while not self.__runserver_request:
                 pass
@@ -258,6 +261,16 @@ class ModbusController:
                 self.logger.info('(Radwrite-Loop) pausing...')
                 time.sleep(self._readwrite_retry_sec)
                 self.logger.info('(Radwrite-Loop) resumed')
+
+    def _readfail_recover_loop(self):
+        while True:
+            self.logger.debug('(Readfail-Recover-Loop) recovering...')
+            try:
+                self.mirror.readfail_recover()
+            except Exception as e:
+                self.logger.error(f"(Readfail-Recover-Loop) error: {e}")
+            finally:
+                time.sleep(self._readwrite_retry_sec)
 
     def WriteContext(self):
         for src in self.mirror.src_list:

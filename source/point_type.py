@@ -49,16 +49,19 @@ class PointType:
         return req[self.type_str]
 
     def RequestValue(self, client, *args, **kw):
-        req = self._RequestFunc(client)(*args, **kw)
-        if not req.isError():
-            if self.type_str in ['co', 'di']:
-                return 1,req.bits
-            elif self.type_str in ['hr', 'ir']:
-                return 1,req.registers
+        try:
+            req = self._RequestFunc(client)(*args, **kw)
+            if not req.isError():
+                if self.type_str in ['co', 'di']:
+                    return 1,req.bits
+                elif self.type_str in ['hr', 'ir']:
+                    return 1,req.registers
 
-        else:
-            return 0,req
-    
+            else:
+                return 0,req
+        except:
+            return -1, req
+
     def _WriteFunc(self, client):
         req = dict(
             co=client.write_coils,

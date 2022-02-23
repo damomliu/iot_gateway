@@ -98,6 +98,11 @@ class SyncMirror():
                 self.logger.error(f'Read failed {src} \n{e}')
                 self.src_list.set_read_failed(src)
 
+    def readfail_recover(self):
+        for src in self.src_list.read_failed:
+            self.src_list.set_readfail_recover(src)
+            self.logger.info(f'Readfail recover {src}')
+
     def _MatchSourceList(self, fx, address):
         matched_list = []
         for src in self.src_list:

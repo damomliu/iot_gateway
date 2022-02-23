@@ -61,6 +61,13 @@ class MirrorSourceList(list):
         src.status = SourceStatus.READING_FAILED
 
     @property
+    def read_failed(self):
+        return [src for src in self if src.status == SourceStatus.READING_FAILED]
+
+    def set_readfail_recover(self, src):
+        src.status = SourceStatus.READING_FAILED_RECOVER
+
+    @property
     def counter(self):
         counter_dict = {}
         for src in self:
