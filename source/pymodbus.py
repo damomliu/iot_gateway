@@ -1,6 +1,6 @@
 from pymodbus.client.sync import ModbusTcpClient
 
-from . import PointType, DataType
+from . import PointType, DataType, EDataOrder
 from ._base import SourcePairBase, ClientBase, TargetBase, _get, _clean_dict
 
 
@@ -162,12 +162,13 @@ class ModbusTarget(TargetBase):
         address,
         point_type_str,
         data_type_str,
+        data_order,
         addr_start_from=1,
         desc=None
     ):
         self.address = int(address)
         self.pointType = PointType(point_type_str)
-        self.dataType = DataType(data_type_str, self.pointType)
+        self.dataType = DataType(data_type_str, self.pointType, **data_order.to_pymodbus)
         self.addr_start_from = addr_start_from
         self.desc = desc if desc else ''
 
@@ -208,6 +209,7 @@ class ModbusTarget(TargetBase):
             address=kw['TargetAddress'],
             point_type_str=_get(kw, 'PointType', cls._default_pointtype_str),
             data_type_str=_get(kw, 'DataType', cls._default_datatype_str),
+            data_order=EDataOrder[_get(kw, "ABCD", "ABCD")],
             addr_start_from=_get(kw, 'addr_start_from',
                                  cls._default_addr_start_from),
             desc=kw.get('TargetDesc'),

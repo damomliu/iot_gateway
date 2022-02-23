@@ -1,8 +1,23 @@
+from enum import Enum
+from sys import byteorder
+
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 from . import PointType
 
 _DEFAULT_BYTE_ORDER = '>'
 _DEFAULT_WORD_ORDER = '>'
+
+
+class EDataOrder(Enum):
+    ABCD = ">>"
+    CDAB = "><"
+    BADC = "<>"
+    DCBA = "<<"
+
+    @property
+    def to_pymodbus(self):
+        return dict(byteorder=self.value[0], wordorder=self.value[1])
+
 
 class DataType:
     def __init__(

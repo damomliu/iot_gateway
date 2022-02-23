@@ -10,7 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
-__version__ = (1, 2, 6)
+__version__ = (1, 3, 0)
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
