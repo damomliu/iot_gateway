@@ -10,7 +10,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from pymodbus_context import LinkedSlaveContext
 
-__version__ = (1, 3, 0)
+__version__ = (1, 3, 1)
 
 class ModbusController:
     _default_address_path = Path('./address.csv')
@@ -21,6 +21,7 @@ class ModbusController:
     _default_pointtype_str = 'hr'
     _default_datatype_str = 'float32'
     _default_server_host = '127.0.0.1'
+    _default_abcd_str = 'ABCD'
     _default_server_port = 5020
     _default_server_sid = 0x00
     _default_server_null_value = -99
@@ -32,12 +33,12 @@ class ModbusController:
     __version__ = __version__
 
     def __init__(self,
-        logger=None,
-        verbose=False,
-        mirror_mode: str = factory.DEFAULT_MIRROR_MODE,
-        server_mode: str = factory.DEFAULT_SERVER_MODE,
-        **kw,
-    ):
+                 logger=None,
+                 verbose=False,
+                 mirror_mode: str = factory.DEFAULT_MIRROR_MODE,
+                 server_mode: str = factory.DEFAULT_SERVER_MODE,
+                 **kw,
+                 ):
         self.verbose = verbose
         self._SetLogger(logger)
         self._SetConfig(**kw)
@@ -88,6 +89,7 @@ class ModbusController:
         self._source_sid = int(self._getattr(kw, 'source_sid'))
         self._pointtype_str = self._getattr(kw, 'pointtype_str')
         self._datatype_str = self._getattr(kw, 'datatype_str')
+        self._abcd_str = self._getattr(kw, 'abcd_str')
         self._server_host = self._getattr(kw, 'server_host')
         self._server_port = int(self._getattr(kw, 'server_port'))
         self._server_sid = int(self._getattr(kw, 'server_sid'))
@@ -164,6 +166,7 @@ class ModbusController:
     def _SetSources(self):
         ModbusTarget._default_pointtype_str = self._pointtype_str
         ModbusTarget._default_datatype_str = self._datatype_str
+        ModbusTarget._default_abcd_str = self._abcd_str
         ModbusTarget._default_addr_start_from = self._addr_start_from
 
         PyModbusTcpSource._default_port = self._source_port
