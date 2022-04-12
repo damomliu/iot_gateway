@@ -46,7 +46,7 @@ class ModbusController:
         self._SetSources()
 
         self.mirror = factory.MIRROR[mirror_mode](
-            src_list=SourceList(self._source_come_from, self._address_path, self.logger),
+            src_list=SourceList(self._address_path, self.logger),
             logger=self.logger,
         )
         self.context = LinkedSlaveContext.ServerContext(
@@ -83,7 +83,6 @@ class ModbusController:
         return kw.get(attr_name, default_val)
 
     def _SetConfig(self, **kw):
-        self._source_come_from = self._getattr(kw, 'source_come_from')
         self._address_path = Path(self._getattr(kw, 'address_path'))
         self._addr_start_from = self._getattr(kw, 'addr_start_from')
         self._register_folder = Path(self._getattr(kw, 'register_folder'))
@@ -121,7 +120,6 @@ class ModbusController:
     @property
     def config_dict(self):
         kw = {attr: getattr(self, '_' + attr) for attr in [
-            'source_come_from',
             'address_path',
             'addr_start_from',
             'register_folder',

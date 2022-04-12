@@ -110,9 +110,8 @@ class MirrorSourceList(list):
 
 
 class SourceList(list):
-    def __init__(self, origin, origin_path, logger):
+    def __init__(self, origin_path, logger):
         super().__init__()
-        self.origin = origin
         self.origin_path = origin_path
         self.logger = logger
         self.LoadSrcList()
@@ -168,14 +167,17 @@ class SourceList(list):
                 self.logger.warning(f'Invalid source: {e} / {r}')
 
     def LoadSrcList(self):
-        if self.origin == 'csv':
-            with open(self.origin_path, 'r', encoding='utf-8-sig') as f:
-                dict_list = csv.DictReader(f)
+        address = str(self.origin_path).split('.')[-1]
+        try:
+            if address == 'csv':
+                with open(self.origin_path, 'r', encoding='utf-8-sig') as f:
+                    dict_list = csv.DictReader(f)
+                    self.append_source(dict_list)
+            elif address == 'db':
+                dict_list = self.readsqldata()
                 self.append_source(dict_list)
-        elif self.origin == 'sqllite':
-            dict_list = self.readsqldata()
-            self.append_source(dict_list)
-
+        except Exception as e:
+            self.logger.warning(f'Invalid Source_come_from: {e}')
 
 def _client_summary(source_list, expand_failed=True, expand_success=False):
     counter = Counter()

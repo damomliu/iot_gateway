@@ -1,7 +1,6 @@
 {
     "address_path": "./address.csv",
     "register_folder": "./.register/",
-    "source_come_from": "csv",
 
     "source_port": 502,
     "pointtype_str": "hr",
