@@ -1,5 +1,10 @@
 from collections import Counter
 from .status import SourceStatus
+import csv
+from .pymodbus import PyModbusTcpSource
+from .json import JsonSource
+from .hsl import HslModbusTcpSource
+import sqlite3
 
 
 class MirrorSourceList(list):
@@ -78,7 +83,7 @@ class MirrorSourceList(list):
             else:
                 counter_dict[src_class] = Counter([src_status])
 
-        return {k: dict(v) for k,v in counter_dict.items()}
+        return {k: dict(v) for k, v in counter_dict.items()}
 
     @property
     def client_list(self) -> list:
@@ -104,6 +109,74 @@ class MirrorSourceList(list):
         return [dict(counter), mixed_dict]
 
 
+class SourceList(list):
+    def __init__(self, origin, origin_path, logger):
+        super().__init__()
+        self.origin = origin
+        self.origin_path = origin_path
+        self.logger = logger
+        self.LoadSrcList()
+
+    def readsqldata(self):
+        con = sqlite3.connect(self.origin_path)
+        cur = con.cursor()
+        cur.execute('select * from address')
+        dict_list = []
+        for data in cur.fetchall():
+            source_dict = {}
+            source_dict['SourceProtocol'] = data[0]
+            source_dict['SourceIP'] = data[1]
+            source_dict['SourcePort'] = data[2]
+            source_dict['SourceDeviceID'] = data[3]
+            source_dict['SourcePointType'] = data[4]
+            source_dict['SourceAddress'] = data[5]
+            source_dict['SourceDataype'] = data[6]
+            source_dict['TargetAddress'] = data[7]
+            source_dict['DataType'] = data[8]
+            source_dict['ABCD'] = data[9]
+            source_dict['FormulaX'] = data[10]
+            source_dict['TargetDesc'] = data[11]
+            source_dict['SourceDesc'] = data[12]
+            dict_list.append(source_dict)
+        cur.close()
+        con.close()
+        return dict_list
+
+    def append_source(self, dict_list):
+        for r in dict_list:
+            protocol_str = r.get('SourceProtocol')
+            try:
+                if protocol_str.startswith('modbus_tcp'):
+                    # add TcpSource
+                    if protocol_str.endswith('tcp1'):
+                        self.append(PyModbusTcpSource.FromDict(**r, is_writable=False))
+                    elif protocol_str.endswith('tcp1rw'):
+                        self.append(PyModbusTcpSource.FromDict(**r, is_writable=True))
+                    elif protocol_str.endswith('tcp2'):
+                        self.append(HslModbusTcpSource.FromDict(**r, is_writable=False))
+                    elif protocol_str.endswith('tcp2rw'):
+                        self.append(HslModbusTcpSource.FromDict(**r, is_writable=True))
+
+                elif protocol_str == 'json':
+                    # add JsonSource
+                    self.append(JsonSource.FromDict(**r))
+
+                else:
+                    continue
+
+            except Exception as e:
+                self.logger.warning(f'Invalid source: {e} / {r}')
+
+    def LoadSrcList(self):
+        if self.origin == 'csv':
+            with open(self.origin_path, 'r', encoding='utf-8-sig') as f:
+                dict_list = csv.DictReader(f)
+                self.append_source(dict_list)
+        elif self.origin == 'sqllite':
+            dict_list = self.readsqldata()
+            self.append_source(dict_list)
+
+
 def _client_summary(source_list, expand_failed=True, expand_success=False):
     counter = Counter()
     success_list = []
@@ -114,7 +187,7 @@ def _client_summary(source_list, expand_failed=True, expand_success=False):
             failed_list.append(str(src))
         else:
             success_list.append(str(src))
-    summary = [f'{k} * {v}' for k,v in counter.items()]
+    summary = [f'{k} * {v}' for k, v in counter.items()]
     if expand_failed:
         summary.extend(failed_list)
     if expand_success:

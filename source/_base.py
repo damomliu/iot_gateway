@@ -1,7 +1,7 @@
 import abc
 from os import remove, replace
 from . import PointType, DataType
-from . import SourceStatus
+from .status import SourceStatus
 
 
 class SourcePairBase(metaclass=abc.ABCMeta):

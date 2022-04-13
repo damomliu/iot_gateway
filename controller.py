@@ -8,11 +8,12 @@ from logger import OneLogger
 import factory
 from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
+from source.list import SourceList
 from pymodbus_context import LinkedSlaveContext
-
 __version__ = (1, 3, 1)
 
 class ModbusController:
+    _default_source_come_from = 'csv'
     _default_address_path = Path('./address.csv')
     _default_register_folder = Path('./.register/')
     _default_addr_start_from = 1
@@ -45,7 +46,7 @@ class ModbusController:
         self._SetSources()
 
         self.mirror = factory.MIRROR[mirror_mode](
-            src_list=self.LoadSrcList(),
+            src_list=SourceList(self._source_come_from, self._address_path, self.logger),
             logger=self.logger,
         )
         self.context = LinkedSlaveContext.ServerContext(
@@ -82,6 +83,7 @@ class ModbusController:
         return kw.get(attr_name, default_val)
 
     def _SetConfig(self, **kw):
+        self._source_come_from = self._getattr(kw, 'source_come_from')
         self._address_path = Path(self._getattr(kw, 'address_path'))
         self._addr_start_from = self._getattr(kw, 'addr_start_from')
         self._register_folder = Path(self._getattr(kw, 'register_folder'))
@@ -118,7 +120,8 @@ class ModbusController:
 
     @property
     def config_dict(self):
-        kw = {attr: getattr(self, '_'+attr) for attr in [
+        kw = {attr: getattr(self, '_' + attr) for attr in [
+            'source_come_from',
             'address_path',
             'addr_start_from',
             'register_folder',
@@ -130,38 +133,6 @@ class ModbusController:
             'mirror_refresh_sec',
         ]}
         return kw
-
-    def LoadSrcList(self):
-        src_list = []
-        with open(self._address_path, 'r', encoding='utf-8-sig') as f:
-            for r in csv.DictReader(f):
-                protocol_str = r.get('SourceProtocol')
-                try:
-                    if protocol_str.startswith('modbus_tcp'):
-                        # add TcpSource
-                        if protocol_str.endswith('tcp1'):
-                            src_list.append(PyModbusTcpSource.FromDict(**r, is_writable=False))
-                        elif protocol_str.endswith('tcp1rw'):
-                            src_list.append(PyModbusTcpSource.FromDict(**r, is_writable=True))
-                        elif protocol_str.endswith('tcp2'):
-                            src_list.append(HslModbusTcpSource.FromDict(**r, is_writable=False))
-                        elif protocol_str.endswith('tcp2rw'):
-                            src_list.append(HslModbusTcpSource.FromDict(**r, is_writable=True))
-
-                    elif protocol_str == 'json':
-                        # add JsonSource
-                        src_list.append(JsonSource.FromDict(**r))
-
-                    else:
-                        continue
-
-                except Exception as e:
-                    self.logger.warning(f'Invalid source: {e} / {r}')
-
-        # for fpath in Path(self.config_dict['register_folder']).glob('*.json'):
-        #     src_list.append(JsonSource.FromFile(fpath))
-
-        return src_list
 
     def _SetSources(self):
         ModbusTarget._default_pointtype_str = self._pointtype_str
@@ -252,7 +223,7 @@ class ModbusController:
                 if self.verbose:
                     _times.append(time.time())
                     if len(_times) > 1:
-                        print(f"[{len(_times)-1}] {_times[-1] - _times[-2] :.2f}")
+                        print(f"[{len(_times) - 1}] {_times[-1] - _times[-2] :.2f}")
                         if len(_times) > 10:
                             time_span = _times[-1] - _times[0]
                             time_avg = time_span / (len(_times) - 1)
