@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from . import PointType
+from . import PointType, DataType
 from ._base import SourcePairBase, ClientBase, _get, _clean_dict
 from .pymodbus import ModbusTarget
 
@@ -8,12 +8,22 @@ from .pymodbus import ModbusTarget
 class JsonSource(SourcePairBase):
     _default_folder = None
 
-    def __init__(self, filepath, target, desc=None, values=None):
+    def __init__(self, filepath, target,
+                 point_type_str: str = None,
+                 data_type_str: str = None,
+                 formula_x_str: str = None,
+                 desc=None,
+                 values=None):
         super().__init__(
             client=JsonClient(filepath),
             target=target,
             desc=desc
         )
+        self.pointType = PointType(
+            point_type_str) if point_type_str else self.target.pointType
+        self.dataType = DataType(
+            data_type_str, self.pointType) if data_type_str else self.target.dataType
+        self.formula_x_str = formula_x_str
         self.values = values
 
     def __repr__(self) -> str:
@@ -33,6 +43,9 @@ class JsonSource(SourcePairBase):
         kwargs = _clean_dict(
             filepath=filepath,
             target=target,
+            point_type_str=kw.get('SourcePointType'),
+            data_type_str=kw.get('SourceDataype'),
+            formula_x_str=kw.get('FormulaX'),
             desc=kw.get('SourceDesc')
         )
         return cls(**kwargs)
@@ -66,7 +79,6 @@ class JsonSource(SourcePairBase):
             info_list.append(f'val={self.target.dataType.Decode(self.values)}')
         except:
             pass
-
         return all(res_list), info_list
 
     def Disconnect(self):

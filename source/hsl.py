@@ -10,12 +10,13 @@ class HslModbusTcpSource(SourceBase):
     _default_port = None
 
     def __init__(
-        self, ip, port, address, target, desc=None,
-        slave_id:int=None,
-        point_type_str:str=None,
-        data_type_str:str=None,
-        addr_start_from=None,
-        is_writable:bool=False,
+            self, ip, port, address, target, desc=None,
+            slave_id: int = None,
+            point_type_str: str = None,
+            data_type_str: str = None,
+            addr_start_from = None,
+            formula_x_str: str = None,
+            is_writable: bool = False,
     ) -> None:
 
         super().__init__(ip, port, address, target, desc=desc)
@@ -23,6 +24,7 @@ class HslModbusTcpSource(SourceBase):
         self.pointType = PointType(point_type_str) if point_type_str else self.target.pointType
         self.dataType = DataType(data_type_str, self.pointType) if data_type_str else self.target.dataType
         self.addr_start_from = addr_start_from if addr_start_from else self.target.addr_start_from
+        self.formula_x_str = formula_x_str
         self.is_writable = bool(is_writable)
 
         self._PreCheck()
@@ -68,7 +70,7 @@ class HslModbusTcpSource(SourceBase):
             '_default_slave_id',
             '_default_port',
         ]]), f'Need to setup default value for <{cls.__name__}>'
-        
+
         target = ModbusTarget.FromDict(**kw)
         kwargs = _clean_dict(
             ip=kw['SourceIP'],
@@ -79,11 +81,12 @@ class HslModbusTcpSource(SourceBase):
             point_type_str=kw.get('SourcePointType'),
             data_type_str=kw.get('SourceDataype'),
             addr_start_from=kw.get('addr_start_from'),
+            formula_x_str=kw.get('FormulaX'),
             is_writable=is_writable,
             desc=kw.get('SourceDesc'),
         )
         return cls(**kwargs)
-    
+
     def Connect(self):
         if not self.is_connected:
             res = self.client.ConnectServer()
