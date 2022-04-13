@@ -155,6 +155,7 @@ class PyModbusTcpClient(ClientBase, ModbusTcpClient):
 class ModbusTarget(TargetBase):
     _default_pointtype_str = None
     _default_datatype_str = None
+    _default_abcd_str =None
     _default_addr_start_from = None
 
     def __init__(
@@ -209,7 +210,7 @@ class ModbusTarget(TargetBase):
             address=kw['TargetAddress'],
             point_type_str=_get(kw, 'PointType', cls._default_pointtype_str),
             data_type_str=_get(kw, 'DataType', cls._default_datatype_str),
-            data_order=EDataOrder[_get(kw, "ABCD", "ABCD")],
+            data_order=EDataOrder[_get(kw, "ABCD", cls._default_abcd_str)],
             addr_start_from=_get(kw, 'addr_start_from',
                                  cls._default_addr_start_from),
             desc=kw.get('TargetDesc'),
