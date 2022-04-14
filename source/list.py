@@ -1,3 +1,4 @@
+import os.path
 from collections import Counter
 from .status import SourceStatus
 import csv
@@ -114,7 +115,7 @@ class SourceList(list):
         super().__init__()
         self.origin_path = origin_path
         self.logger = logger
-        self.LoadSrcList()
+        self.load_src_list()
 
     def readsqldata(self):
         con = sqlite3.connect(self.origin_path)
@@ -166,18 +167,16 @@ class SourceList(list):
             except Exception as e:
                 self.logger.warning(f'Invalid source: {e} / {r}')
 
-    def LoadSrcList(self):
-        address = str(self.origin_path).split('.')[-1]
-        try:
-            if address == 'csv':
-                with open(self.origin_path, 'r', encoding='utf-8-sig') as f:
-                    dict_list = csv.DictReader(f)
-                    self.append_source(dict_list)
-            elif address == 'db':
-                dict_list = self.readsqldata()
-                self.append_source(dict_list)
-        except Exception as e:
-            self.logger.warning(f'Invalid Source_come_from: {e}')
+    def load_src_list(self):
+        ext = os.path.splitext(self.origin_path)[-1]
+        if ext == '.csv':
+            with open(self.origin_path, 'r', encoding='utf-8-sig') as f:
+                dict_list = list(csv.DictReader(f))[1:]
+        elif ext == '.db':
+            dict_list = self.readsqldata()
+        else:
+            raise ValueError('副檔名應為.csv or .db')
+        self.append_source(dict_list)
 
 def _client_summary(source_list, expand_failed=True, expand_success=False):
     counter = Counter()
