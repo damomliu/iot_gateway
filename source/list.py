@@ -119,24 +119,11 @@ class SourceList(list):
     def readsqldata(self):
         con = sqlite3.connect(self.origin_path)
         cur = con.cursor()
+        cur.row_factory = sqlite3.Row
         cur.execute('select * from address')
         dict_list = []
         for data in cur.fetchall():
-            source_dict = {}
-            source_dict['SourceProtocol'] = data[0]
-            source_dict['SourceIP'] = data[1]
-            source_dict['SourcePort'] = data[2]
-            source_dict['SourceDeviceID'] = data[3]
-            source_dict['SourcePointType'] = data[4]
-            source_dict['SourceAddress'] = data[5]
-            source_dict['SourceDataype'] = data[6]
-            source_dict['TargetAddress'] = data[7]
-            source_dict['DataType'] = data[8]
-            source_dict['ABCD'] = data[9]
-            source_dict['FormulaX'] = data[10]
-            source_dict['TargetDesc'] = data[11]
-            source_dict['SourceDesc'] = data[12]
-            dict_list.append(source_dict)
+            dict_list.append(dict(data))
         cur.close()
         con.close()
         return dict_list

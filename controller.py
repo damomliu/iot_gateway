@@ -1,7 +1,8 @@
-from pathlib import Path
 import json
 import csv
 import time
+import os.path
+from pathlib import Path
 from threading import Thread, Event
 from logger import OneLogger
 
@@ -10,6 +11,8 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from source.list import SourceList
 from pymodbus_context import LinkedSlaveContext
+from model.config import Config
+
 __version__ = (1, 3, 1)
 
 class ModbusController:
@@ -105,6 +108,16 @@ class ModbusController:
             self._addr_start_from in [0, 1],
             self._server_host.replace('.', '').isdigit(),
         ])
+    @classmethod
+    def from_config_obj(cls, config_path, *args, **kw):
+        ext = os.path.splitext(config_path)[-1]
+        if ext == '.json':
+            config_dict = Config.get_from_json(config_path).dict()
+        elif ext == '.db':
+            config_dict = Config.get_from_sql(config_path).dict()
+        else:
+            raise ValueError('Config副檔名應為.json or .db')
+        return cls(*args, **kw, **config_dict)
 
     @classmethod
     def FromConfigFile(cls, config_path, *args, **kw):
