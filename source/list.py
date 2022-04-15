@@ -6,6 +6,7 @@ from .pymodbus import PyModbusTcpSource
 from .json import JsonSource
 from .hsl import HslModbusTcpSource
 import sqlite3
+from model.source import Address
 
 
 class MirrorSourceList(list):
@@ -142,7 +143,31 @@ class SourceList(list):
         con.close()
         return dict_list
 
-    def append_source(self, dict_list):
+    def append_from_obj(self, source_list):
+        for source in source_list:
+            protocol_str = source.SourceProtocol
+            try:
+                if protocol_str.startswith('modbus_tcp'):
+                    # add TcpSource
+                    if protocol_str.endswith('tcp1'):
+                        self.append(PyModbusTcpSource.from_obj(source, is_writable=False))
+                    elif protocol_str.endswith('tcp1rw'):
+                        self.append(PyModbusTcpSource.from_obj(source, is_writable=True))
+                    elif protocol_str.endswith('tcp2'):
+                        self.append(HslModbusTcpSource.from_obj(source, is_writable=False))
+                    elif protocol_str.endswith('tcp2rw'):
+                        self.append(HslModbusTcpSource.from_obj(source, is_writable=True))
+                elif protocol_str == 'json':
+                    # add JsonSource
+                    self.append(JsonSource.from_obj(source))
+
+                else:
+                    continue
+
+            except Exception as e:
+                self.logger.warning(f'Invalid source: {e} / {r}')
+
+    def append_from_dict(self, dict_list):
         for r in dict_list:
             protocol_str = r.get('SourceProtocol')
             try:
@@ -170,13 +195,13 @@ class SourceList(list):
     def load_src_list(self):
         ext = os.path.splitext(self.origin_path)[-1]
         if ext == '.csv':
-            with open(self.origin_path, 'r', encoding='utf-8-sig') as f:
-                dict_list = list(csv.DictReader(f))[1:]
+            source_list = Address.get_from_csv(self.origin_path)
         elif ext == '.db':
-            dict_list = self.readsqldata()
+            source_list = Address.get_from_sql(self.origin_path)
         else:
             raise ValueError('副檔名應為.csv or .db')
-        self.append_source(dict_list)
+        self.append_from_obj(source_list)
+
 
 def _client_summary(source_list, expand_failed=True, expand_success=False):
     counter = Counter()

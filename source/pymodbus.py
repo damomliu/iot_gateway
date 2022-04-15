@@ -9,14 +9,14 @@ class PyModbusTcpSource(SourcePairBase):
     _default_port = None
 
     def __init__(
-        self, client, target, desc=None,
-        address: int = None,
-        slave_id: int = None,
-        point_type_str: str = None,
-        data_type_str: str = None,
-        addr_start_from=None,
-        formula_x_str: str = None,
-        is_writable: bool = False,
+            self, client, target, desc=None,
+            address: int = None,
+            slave_id: int = None,
+            point_type_str: str = None,
+            data_type_str: str = None,
+            addr_start_from=None,
+            formula_x_str: str = None,
+            is_writable: bool = False,
     ) -> None:
 
         super().__init__(client, target, desc)
@@ -50,8 +50,36 @@ class PyModbusTcpSource(SourcePairBase):
             return rep_str + f' : {self.target.repr_postfix}'
 
     @property
-    def address_from0(self): return self.address - self.addr_start_from
-    def __len__(self): return self.dataType.length
+    def address_from0(self):
+        return self.address - self.addr_start_from
+
+    def __len__(self):
+        return self.dataType.length
+
+    @classmethod
+    def from_obj(cls, Address, is_writable=False, ):
+        assert all([getattr(cls, attr) is not None for attr in [
+            '_default_slave_id',
+            '_default_port',
+        ]]), f'Need to setup default value for <{cls.__name__}>'
+        target = ModbusTarget.from_address(Address)
+        client = PyModbusTcpClient(
+            ip=Address.SourceIP,
+            port=int(Address.SourcePort if Address.SourcePort else cls._default_port),
+        )
+        kwargs = _clean_dict(
+            client=client,
+            target=target,
+            address=int(Address.SourceAddress),
+            slave_id=Address.SourceDeviceID,
+            point_type_str=Address.SourcePointType,
+            data_type_str=Address.SourceDataype,
+            addr_start_from=Address.addr_start_from,
+            formula_x_str=Address.FormulaX,
+            is_writable=is_writable,
+            desc=Address.SourceDesc,
+        )
+        return cls(**kwargs)
 
     @classmethod
     def FromDict(cls, is_writable=False, **kw):
@@ -155,17 +183,17 @@ class PyModbusTcpClient(ClientBase, ModbusTcpClient):
 class ModbusTarget(TargetBase):
     _default_pointtype_str = None
     _default_datatype_str = None
-    _default_abcd_str =None
+    _default_abcd_str = None
     _default_addr_start_from = None
 
     def __init__(
-        self,
-        address,
-        point_type_str,
-        data_type_str,
-        data_order,
-        addr_start_from=1,
-        desc=None
+            self,
+            address,
+            point_type_str,
+            data_type_str,
+            data_order,
+            addr_start_from=1,
+            desc=None
     ):
         self.address = int(address)
         self.pointType = PointType(point_type_str)
@@ -190,6 +218,7 @@ class ModbusTarget(TargetBase):
 
     @property
     def length(self): return self.dataType.length
+
     @property
     def address_from0(self): return self.address - self.addr_start_from
 
@@ -197,6 +226,24 @@ class ModbusTarget(TargetBase):
     def address_set(self):
         _range = range(self.address_from0, self.address_from0 + self.length)
         return set(list(_range))
+
+    @classmethod
+    def from_address(cls, address):
+        assert all([getattr(ModbusTarget, attr) is not None for attr in [
+            '_default_pointtype_str',
+            '_default_datatype_str',
+            '_default_addr_start_from',
+        ]]), f'Need to setup default value for <{__class__.__name__}>'
+
+        kwargs = _clean_dict(
+            address=address.TargetAddress,
+            point_type_str=address.SourcePointType if address.SourcePointType else cls._default_pointtype_str,
+            data_type_str=address.DataType if address.DataType else cls._default_datatype_str,
+            data_order=EDataOrder[address.ABCD if address.ABCD else cls._default_abcd_str],
+            addr_start_from=address.addr_start_from if address.addr_start_from else cls._default_addr_start_from,
+            desc=address.TargetDesc,
+        )
+        return cls(**kwargs)
 
     @classmethod
     def FromDict(cls, **kw):
