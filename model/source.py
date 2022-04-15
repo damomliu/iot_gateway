@@ -45,7 +45,6 @@ class Address(BaseModel):
         con.close()
         return sql_list
 
-
 if __name__ == '__main__':
     res_csv = Address.get_from_csv('../address.csv')
     print('csv:', res_csv)

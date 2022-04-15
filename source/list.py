@@ -118,31 +118,6 @@ class SourceList(list):
         self.logger = logger
         self.load_src_list()
 
-    def readsqldata(self):
-        con = sqlite3.connect(self.origin_path)
-        cur = con.cursor()
-        cur.execute('select * from address')
-        dict_list = []
-        for data in cur.fetchall():
-            source_dict = {}
-            source_dict['SourceProtocol'] = data[0]
-            source_dict['SourceIP'] = data[1]
-            source_dict['SourcePort'] = data[2]
-            source_dict['SourceDeviceID'] = data[3]
-            source_dict['SourcePointType'] = data[4]
-            source_dict['SourceAddress'] = data[5]
-            source_dict['SourceDataype'] = data[6]
-            source_dict['TargetAddress'] = data[7]
-            source_dict['DataType'] = data[8]
-            source_dict['ABCD'] = data[9]
-            source_dict['FormulaX'] = data[10]
-            source_dict['TargetDesc'] = data[11]
-            source_dict['SourceDesc'] = data[12]
-            dict_list.append(source_dict)
-        cur.close()
-        con.close()
-        return dict_list
-
     def append_from_obj(self, source_list):
         for source in source_list:
             protocol_str = source.SourceProtocol
@@ -167,8 +142,9 @@ class SourceList(list):
             except Exception as e:
                 self.logger.warning(f'Invalid source: {e} / {r}')
 
-    def append_from_dict(self, dict_list):
-        for r in dict_list:
+    def append_from_dict(self, source_list):
+        for source in source_list:
+            r = source.dict()
             protocol_str = r.get('SourceProtocol')
             try:
                 if protocol_str.startswith('modbus_tcp'):
@@ -201,6 +177,7 @@ class SourceList(list):
         else:
             raise ValueError('副檔名應為.csv or .db')
         self.append_from_obj(source_list)
+        # self.append_from_dict(source_list)
 
 
 def _client_summary(source_list, expand_failed=True, expand_success=False):
