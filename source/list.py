@@ -1,12 +1,9 @@
+import csv
+import sqlite3
 import os.path
 from collections import Counter
 from .status import SourceStatus
-import csv
-from .pymodbus import PyModbusTcpSource
-from .json import JsonSource
-from .hsl import HslModbusTcpSource
-import sqlite3
-from model.source import Address
+from model.Address import Address
 
 
 class MirrorSourceList(list):
@@ -111,73 +108,49 @@ class MirrorSourceList(list):
         return [dict(counter), mixed_dict]
 
 
-class SourceList(list):
+class AddressList(list):
     def __init__(self, origin_path, logger):
         super().__init__()
         self.origin_path = origin_path
         self.logger = logger
         self.load_src_list()
 
-    def append_from_obj(self, source_list):
-        for source in source_list:
-            protocol_str = source.SourceProtocol
-            try:
-                if protocol_str.startswith('modbus_tcp'):
-                    # add TcpSource
-                    if protocol_str.endswith('tcp1'):
-                        self.append(PyModbusTcpSource.from_obj(source, is_writable=False))
-                    elif protocol_str.endswith('tcp1rw'):
-                        self.append(PyModbusTcpSource.from_obj(source, is_writable=True))
-                    elif protocol_str.endswith('tcp2'):
-                        self.append(HslModbusTcpSource.from_obj(source, is_writable=False))
-                    elif protocol_str.endswith('tcp2rw'):
-                        self.append(HslModbusTcpSource.from_obj(source, is_writable=True))
-                elif protocol_str == 'json':
-                    # add JsonSource
-                    self.append(JsonSource.from_obj(source))
+    def read_sqllite(self):
+        con = sqlite3.connect(self.origin_path)
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+        cur.execute('select * from address')
+        sqllite_list = []
+        for data in cur.fetchall():
+            sqllite_list.append(dict(data))
+        cur.close()
+        con.close()
+        return sqllite_list
 
-                else:
-                    continue
+    def to_src_list(self):
+        return [address.to_source(self.logger) for address in self]
 
-            except Exception as e:
-                self.logger.warning(f'Invalid source: {e} / {r}')
-
-    def append_from_dict(self, source_list):
-        for source in source_list:
-            r = source.dict()
-            protocol_str = r.get('SourceProtocol')
-            try:
-                if protocol_str.startswith('modbus_tcp'):
-                    # add TcpSource
-                    if protocol_str.endswith('tcp1'):
-                        self.append(PyModbusTcpSource.FromDict(**r, is_writable=False))
-                    elif protocol_str.endswith('tcp1rw'):
-                        self.append(PyModbusTcpSource.FromDict(**r, is_writable=True))
-                    elif protocol_str.endswith('tcp2'):
-                        self.append(HslModbusTcpSource.FromDict(**r, is_writable=False))
-                    elif protocol_str.endswith('tcp2rw'):
-                        self.append(HslModbusTcpSource.FromDict(**r, is_writable=True))
-
-                elif protocol_str == 'json':
-                    # add JsonSource
-                    self.append(JsonSource.FromDict(**r))
-
-                else:
-                    continue
-
-            except Exception as e:
-                self.logger.warning(f'Invalid source: {e} / {r}')
-
+    """
+    model.Address_Address: 將輸入的數據從 dict形式 轉變成 Address 物件 ，定義數據輸入的欄位型別，確保系統中 數據型別的一致性
+    source.list_AddressList:  處理 Address物件列表 ，將每筆 Address物件，依照條件轉變成相應的Source，確保後續系統操作時 Source物件格式 一致性
+    source.list_MirrorSourceList: 對於 Source物件列表進行驗證，確保 Source物件格式 正確性，以便於後續系統使用
+     """
     def load_src_list(self):
         ext = os.path.splitext(self.origin_path)[-1]
-        if ext == '.csv':
-            source_list = Address.get_from_csv(self.origin_path)
-        elif ext == '.db':
-            source_list = Address.get_from_sql(self.origin_path)
-        else:
-            raise ValueError('副檔名應為.csv or .db')
-        self.append_from_obj(source_list)
-        # self.append_from_dict(source_list)
+        try:
+            if ext == '.csv':
+                with open(self.origin_path, 'r', encoding='utf-8-sig') as f:
+                    dict_list = list(csv.DictReader(f))[1:]
+            elif ext == '.db':
+                dict_list = self.read_sqllite()
+            else:
+                raise ValueError('副檔名應為.csv or .db')
+
+            for l in dict_list:
+                self.append(Address(**l))
+
+        except Exception as e:
+            self.logger.warning(f'Invalid Source_come_from: {e}')
 
 
 def _client_summary(source_list, expand_failed=True, expand_success=False):

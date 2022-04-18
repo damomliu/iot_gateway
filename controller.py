@@ -1,6 +1,5 @@
 from pathlib import Path
 import json
-import csv
 import time
 from threading import Thread, Event
 from logger import OneLogger
@@ -8,7 +7,7 @@ from logger import OneLogger
 import factory
 from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
-from source.list import SourceList
+from source.list import AddressList
 from pymodbus_context import LinkedSlaveContext
 __version__ = (1, 3, 1)
 
@@ -46,7 +45,7 @@ class ModbusController:
         self._SetSources()
 
         self.mirror = factory.MIRROR[mirror_mode](
-            src_list=SourceList(self._address_path, self.logger),
+            src_list=AddressList(self._address_path, self.logger).to_src_list(),
             logger=self.logger,
         )
         self.context = LinkedSlaveContext.ServerContext(
