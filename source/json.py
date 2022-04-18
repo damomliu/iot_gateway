@@ -33,22 +33,6 @@ class JsonSource(SourcePairBase):
     def filepath(self):
         return self.client.filepath
 
-    @classmethod
-    def from_obj(cls, Address):
-        assert all([getattr(__class__, attr) is not None for attr in [
-            '_default_folder',
-        ]]), f'Need to setup default value for <{__class__.__name__}>'
-        target = ModbusTarget.from_address(Address)
-        filepath = cls._default_folder / f'{target.pointType.type_str}_{target.address:05d}.json'
-        kwargs = _clean_dict(
-            filepath=filepath,
-            target=target,
-            point_type_str=Address.SourcePointType,
-            data_type_str=Address.SourceDataype,
-            formula_x_str=Address.FormulaX,
-            desc=Address.SourceDesc,
-        )
-        return cls(**kwargs)
 
     @classmethod
     def FromDict(cls, **kw):
@@ -61,10 +45,10 @@ class JsonSource(SourcePairBase):
         kwargs = _clean_dict(
             filepath=filepath,
             target=target,
-            point_type_str=kw.get('SourcePointType'),
-            data_type_str=kw.get('SourceDataype'),
-            formula_x_str=kw.get('FormulaX'),
-            desc=kw.get('SourceDesc')
+            point_type_str=kw.get('sourcePointType'),
+            data_type_str=kw.get('sourceDataype'),
+            formula_x_str=kw.get('formulaX'),
+            desc=kw.get('sourceDesc')
         )
         return cls(**kwargs)
 

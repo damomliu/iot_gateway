@@ -128,14 +128,21 @@ class AddressList(list):
         return sqllite_list
 
     def to_src_list(self):
-        return [address.to_source(self.logger) for address in self]
+        source_list = []
+        for address in self:
+            try:
+                source_list.append(address.to_source())
+            except Exception as e:
+                self.logger.warning(f'Invalid source: {e} / {address}')
 
-    """
-    model.Address_Address: 將輸入的數據從 dict形式 轉變成 Address 物件 ，定義數據輸入的欄位型別，確保系統中 數據型別的一致性
-    source.list_AddressList:  處理 Address物件列表 ，將每筆 Address物件，依照條件轉變成相應的Source，確保後續系統操作時 Source物件格式 一致性
-    source.list_MirrorSourceList: 對於 Source物件列表進行驗證，確保 Source物件格式 正確性，以便於後續系統使用
-     """
+        return source_list
+
     def load_src_list(self):
+        """
+            model.Address: 將輸入的數據從 dict形式 轉變成 Address 物件 ，定義數據輸入的欄位型別，確保系統中 數據型別的一致性
+            source.AddressList:  處理 Address物件列表 ，將每筆 Address物件，依照條件轉變成相應的Source，確保後續系統操作時 Source物件格式 一致性
+            source.MirrorSourceList: 對於 Source物件列表進行驗證，確保 Source物件格式 正確性，以便於後續系統使用
+        """
         ext = os.path.splitext(self.origin_path)[-1]
         try:
             if ext == '.csv':

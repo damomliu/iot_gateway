@@ -65,20 +65,20 @@ class PyModbusTcpSource(SourcePairBase):
 
         target = ModbusTarget.FromDict(**kw)
         client = PyModbusTcpClient(
-            ip=kw['SourceIP'],
-            port=int(_get(kw, 'SourcePort', cls._default_port)),
+            ip=kw['sourceIP'],
+            port=int(_get(kw, 'sourcePort', cls._default_port)),
         )
         kwargs = _clean_dict(
             client=client,
             target=target,
-            address=int(kw['SourceAddress']),
-            slave_id=kw.get("SourceDeviceID"),
-            point_type_str=kw.get('SourcePointType'),
-            data_type_str=kw.get('SourceDataype'),
+            address=int(kw['sourceAddress']),
+            slave_id=kw.get("sourceDeviceID"),
+            point_type_str=kw.get('sourcePointType'),
+            data_type_str=kw.get('sourceDataype'),
             addr_start_from=kw.get('addr_start_from'),
-            formula_x_str=kw.get('FormulaX'),
+            formula_x_str=kw.get('formulaX'),
             is_writable=is_writable,
-            desc=kw.get('SourceDesc'),
+            desc=kw.get('sourceDesc'),
         )
         return cls(**kwargs)
 
@@ -211,11 +211,11 @@ class ModbusTarget(TargetBase):
         ]]), f'Need to setup default value for <{__class__.__name__}>'
 
         kwargs = _clean_dict(
-            address=kw['TargetAddress'],
-            point_type_str=_get(kw, 'PointType', cls._default_pointtype_str),
-            data_type_str=_get(kw, 'DataType', cls._default_datatype_str),
-            data_order=EDataOrder[_get(kw, "ABCD", cls._default_abcd_str)],
+            address=kw['targetAddress'],
+            point_type_str=_get(kw, 'pointType', cls._default_pointtype_str),
+            data_type_str=_get(kw, 'dataType', cls._default_datatype_str),
+            data_order=EDataOrder[_get(kw, "abcd", cls._default_abcd_str)],
             addr_start_from=_get(kw, 'addr_start_from',cls._default_addr_start_from),
-            desc=kw.get('TargetDesc'),
+            desc=kw.get('targetDesc'),
         )
         return cls(**kwargs)

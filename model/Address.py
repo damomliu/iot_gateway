@@ -1,50 +1,54 @@
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
+
+# from . import PyModbusTcpSource, JsonSource, HslModbusTcpSource
+
 from source.pymodbus import PyModbusTcpSource
 from source.json import JsonSource
 from source.hsl import HslModbusTcpSource
 
+# 預設值新增
 class TargetAddress(BaseModel):
-    TargetAddress: int
-    PointType: str = None
-    DataType: str
-    ABCD: str
-    addr_start_from: str = None
-    TargetDesc: str
+    # Field(alias= 'address欄位名稱')
+    targetAddress: int = Field(alias='TargetAddress')
+    pointType: str = Field(alias='PointType', default=None)
+    dataType: str = Field(alias='DataType', default=None)
+    abcd: str = Field(alias='ABCD', default=None)
+    addr_start_from: str = Field(alias='addr_start_from', default=None)
+    targetDesc: str = Field(alias='TargetDesc', default=None)
+
 
 class SourceAddress(BaseModel):
-    SourceProtocol: str
-    SourceIP: str
-    SourcePort: int
-    SourceAddress: str
-    SourceDeviceID: str
-    SourcePointType: str
-    SourceDataype: str
-    addr_start_from: str = None
-    FormulaX: str
-    SourceDesc: str
+    sourceProtocol: str = Field(alias='SourceProtocol')
+    sourceIP: str = Field(alias='SourceIP')
+    sourcePort: int = Field(alias='SourcePort', default=None)
+    sourceAddress: str = Field(alias='SourceAddress', default=None)
+    sourceDeviceID: str = Field(alias='SourceDeviceID', default=None)
+    sourcePointType: str = Field(alias='SourcePointType', default=None)
+    sourceDataype: str = Field(alias='SourceDataype', default=None)
+    addr_start_from: str = Field(alias='addr_start_from', default=None)
+    formulaX: str = Field(alias='FormulaX', default=None)
+    sourceDesc: str = Field(alias='SourceDesc', default=None)
+
 
 class Address(TargetAddress,SourceAddress):
 
-    def to_source(self,logger):
+    def to_source(self):
         r = self.dict()
-        protocol_str = r.get('SourceProtocol')
-        try:
-            if protocol_str.startswith('modbus_tcp'):
-                # add TcpSource
-                if protocol_str.endswith('tcp1'):
-                    return PyModbusTcpSource.FromDict(**r, is_writable=False)
-                elif protocol_str.endswith('tcp1rw'):
-                    return PyModbusTcpSource.FromDict(**r, is_writable=True)
-                elif protocol_str.endswith('tcp2'):
-                    return HslModbusTcpSource.FromDict(**r, is_writable=False)
-                elif protocol_str.endswith('tcp2rw'):
-                    return HslModbusTcpSource.FromDict(**r, is_writable=True)
+        protocol_str = r.get('sourceProtocol')
+        if protocol_str.startswith('modbus_tcp'):
+            # add TcpSource
+            if protocol_str.endswith('tcp1'):
+                return PyModbusTcpSource.FromDict(**r, is_writable=False)
+            elif protocol_str.endswith('tcp1rw'):
+                return PyModbusTcpSource.FromDict(**r, is_writable=True)
+            elif protocol_str.endswith('tcp2'):
+                return HslModbusTcpSource.FromDict(**r, is_writable=False)
+            elif protocol_str.endswith('tcp2rw'):
+                return HslModbusTcpSource.FromDict(**r, is_writable=True)
 
-            elif protocol_str == 'json':
-                # add JsonSource
-                return JsonSource.FromDict(**r)
-            else:
-                raise ValueError('Source 應為 PyModbusTcpSource or HslModbusTcpSource or JsonSource')
+        elif protocol_str == 'json':
+            # add JsonSource
+            return JsonSource.FromDict(**r)
+        else:
+            raise ValueError('Source 應為 PyModbusTcpSource or HslModbusTcpSource or JsonSource')
 
-        except Exception as e:
-            logger.warning(f'Invalid source: {e} / {r}')

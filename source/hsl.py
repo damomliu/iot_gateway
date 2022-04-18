@@ -66,28 +66,6 @@ class HslModbusTcpSource(SourceBase):
         return self.address - self.addr_start_from
 
     @classmethod
-    def from_obj(cls, Address, is_writable=False, ):
-        assert all([getattr(cls, attr) is not None for attr in [
-            '_default_slave_id',
-            '_default_port',
-        ]]), f'Need to setup default value for <{cls.__name__}>'
-        target = ModbusTarget.from_address(Address)
-        kwargs = _clean_dict(
-            ip=Address.SourceIP,
-            port=int(Address.SourcePort if Address.SourcePort else cls._default_port),
-            address=int(Address.SourceAddress),
-            target=target,
-            slave_id=Address.SourceDeviceID,
-            point_type_str=Address.SourcePointType,
-            data_type_str=Address.SourceDataype,
-            addr_start_from=Address.addr_start_from,
-            formula_x_str=Address.FormulaX,
-            is_writable=is_writable,
-            desc=Address.SourceDesc,
-        )
-        return cls(**kwargs)
-
-    @classmethod
     def FromDict(cls, is_writable=False, **kw):
         assert all([getattr(cls, attr) is not None for attr in [
             '_default_slave_id',
@@ -96,17 +74,17 @@ class HslModbusTcpSource(SourceBase):
 
         target = ModbusTarget.FromDict(**kw)
         kwargs = _clean_dict(
-            ip=kw['SourceIP'],
-            port=int(_get(kw, 'SourcePort', cls._default_port)),
-            address=int(kw['SourceAddress']),
+            ip=kw['sourceIP'],
+            port=int(_get(kw, 'sourcePort', cls._default_port)),
+            address=int(kw['sourceAddress']),
             target=target,
-            slave_id=kw.get("SourceDeviceID"),
-            point_type_str=kw.get('SourcePointType'),
-            data_type_str=kw.get('SourceDataype'),
+            slave_id=kw.get("sourceDeviceID"),
+            point_type_str=kw.get('sourcePointType'),
+            data_type_str=kw.get('sourceDataype'),
             addr_start_from=kw.get('addr_start_from'),
-            formula_x_str=kw.get('FormulaX'),
+            formula_x_str=kw.get('formulaX'),
             is_writable=is_writable,
-            desc=kw.get('SourceDesc'),
+            desc=kw.get('sourceDesc'),
         )
         return cls(**kwargs)
 
