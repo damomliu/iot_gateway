@@ -16,23 +16,6 @@ from model.config import Config
 __version__ = (1, 3, 1)
 
 class ModbusController:
-    _default_source_come_from = 'csv'
-    _default_address_path = Path('./address.csv')
-    _default_register_folder = Path('./.register/')
-    _default_addr_start_from = 1
-    _default_source_port = 502
-    _default_source_sid = 0x01
-    _default_pointtype_str = 'hr'
-    _default_datatype_str = 'float32'
-    _default_server_host = '127.0.0.1'
-    _default_abcd_str = 'ABCD'
-    _default_server_port = 5020
-    _default_server_sid = 0x00
-    _default_server_null_value = -99
-    _default_mirror_refresh_sec = 0.5
-    _default_mirror_retry_sec = 10 * 60
-    _default_readwrite_retry_sec = 10 * 60
-    _default_shutdown_delay_sec = 0
 
     __version__ = __version__
 
@@ -77,47 +60,34 @@ class ModbusController:
             )
         self.logger = logger
 
-    def _getattr(self, kw, attr_name):
-        _attr = '_' + attr_name
-        if not hasattr(self, _attr):
-            default_val = getattr(__class__, f'_default{_attr}')
-        else:
-            default_val = getattr(self, _attr)
-        return kw.get(attr_name, default_val)
-
     def _SetConfig(self, **kw):
-        self._address_path = Path(self._getattr(kw, 'address_path'))
-        self._addr_start_from = self._getattr(kw, 'addr_start_from')
-        self._register_folder = Path(self._getattr(kw, 'register_folder'))
-        self._source_port = int(self._getattr(kw, 'source_port'))
-        self._source_sid = int(self._getattr(kw, 'source_sid'))
-        self._pointtype_str = self._getattr(kw, 'pointtype_str')
-        self._datatype_str = self._getattr(kw, 'datatype_str')
-        self._abcd_str = self._getattr(kw, 'abcd_str')
-        self._server_host = self._getattr(kw, 'server_host')
-        self._server_port = int(self._getattr(kw, 'server_port'))
-        self._server_sid = int(self._getattr(kw, 'server_sid'))
-        self._server_null_value = self._getattr(kw, 'server_null_value')
-        self._mirror_refresh_sec = float(self._getattr(kw, 'mirror_refresh_sec'))
-        self._mirror_retry_sec = int(self._getattr(kw, 'mirror_retry_sec'))
-        self._readwrite_retry_sec = int(self._getattr(kw, 'readwrite_retry_sec'))
-        self._shutdown_delay_sec = int(self._getattr(kw, 'shutdown_delay_sec'))
+        self._address_path = Path(kw['address_path'])
+        self._addr_start_from = kw['addr_start_from']
+        self._register_folder = Path(kw['register_folder'])
+        self._source_port = int(kw['source_port'])
+        self._source_sid = int(kw['source_sid'])
+        self._pointtype_str = kw['pointtype_str']
+        self._datatype_str = kw['datatype_str']
+        self._abcd_str = kw['abcd_str']
+        self._server_host = kw['server_host']
+        self._server_port = int(kw['server_port'])
+        self._server_sid = int(kw['server_sid'])
+        self._server_null_value = kw['server_null_value']
+        self._mirror_refresh_sec = float(kw['mirror_refresh_sec'])
+        self._mirror_retry_sec = int(kw['mirror_retry_sec'])
+        self._readwrite_retry_sec = int(kw['readwrite_retry_sec'])
+        self._shutdown_delay_sec = int(kw['shutdown_delay_sec'])
 
     def _PreCheck(self):
         assert all([
             self._addr_start_from in [0, 1],
             self._server_host.replace('.', '').isdigit(),
         ])
+
     @classmethod
-    def from_config_obj(cls, config_path, *args, **kw):
-        ext = os.path.splitext(config_path)[-1]
-        if ext == '.json':
-            config_dict = Config.get_from_json(config_path).dict()
-        elif ext == '.db':
-            config_dict = Config.get_from_sql(config_path).dict()
-        else:
-            raise ValueError('Config副檔名應為.json or .db')
-        return cls(*args, **kw, **config_dict)
+    def from_config(cls, config_path, logger):
+        config_dict = Config.create(config_path).dict()
+        return cls(logger, **config_dict)
 
     @classmethod
     def FromConfigFile(cls, config_path, *args, **kw):
@@ -130,20 +100,6 @@ class ModbusController:
             config_dict = json.load(f)
         self._SetConfig(**config_dict)
 
-    @property
-    def config_dict(self):
-        kw = {attr: getattr(self, '_' + attr) for attr in [
-            'address_path',
-            'addr_start_from',
-            'register_folder',
-            'source_port',
-            'pointtype_str',
-            'datatype_str',
-            'server_host',
-            'server_port',
-            'mirror_refresh_sec',
-        ]}
-        return kw
 
     def _SetSources(self):
         ModbusTarget._default_pointtype_str = self._pointtype_str
