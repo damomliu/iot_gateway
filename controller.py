@@ -9,7 +9,7 @@ from source import ModbusTarget
 from source import PyModbusTcpSource, JsonSource, HslModbusTcpSource
 from source.list import AddressList
 from pymodbus_context import LinkedSlaveContext
-__version__ = (1, 3, 1)
+__version__ = (1, 3, 2)
 
 class ModbusController:
     _default_source_come_from = 'csv'

@@ -39,16 +39,17 @@ class JsonSource(SourcePairBase):
         assert all([getattr(__class__, attr) is not None for attr in [
             '_default_folder',
         ]]), f'Need to setup default value for <{__class__.__name__}>'
-
-        target = ModbusTarget.FromDict(**kw)
+        source_kw = kw['source']
+        target_kw = kw['target']
+        target = ModbusTarget.FromDict(**target_kw)
         filepath = cls._default_folder / f'{target.pointType.type_str}_{target.address:05d}.json'
         kwargs = _clean_dict(
             filepath=filepath,
             target=target,
-            point_type_str=kw.get('sourcePointType'),
-            data_type_str=kw.get('sourceDataype'),
-            formula_x_str=kw.get('formulaX'),
-            desc=kw.get('sourceDesc')
+            point_type_str=source_kw.get('source_pointtype'),
+            data_type_str=source_kw.get('source_dataype'),
+            formula_x_str=source_kw.get('formulaX'),
+            desc=source_kw.get('source_desc')
         )
         return cls(**kwargs)
 

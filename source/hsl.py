@@ -74,17 +74,17 @@ class HslModbusTcpSource(SourceBase):
 
         target = ModbusTarget.FromDict(**kw)
         kwargs = _clean_dict(
-            ip=kw['sourceIP'],
-            port=int(_get(kw, 'sourcePort', cls._default_port)),
-            address=int(kw['sourceAddress']),
+            ip=kw['source_ip'],
+            port=int(_get(kw, 'source_port', cls._default_port)),
+            address=int(kw['source_address']),
             target=target,
-            slave_id=kw.get("sourceDeviceID"),
-            point_type_str=kw.get('sourcePointType'),
-            data_type_str=kw.get('sourceDataype'),
+            slave_id=kw.get("source_deviceID"),
+            point_type_str=kw.get('source_pointtype'),
+            data_type_str=kw.get('source_dataype'),
             addr_start_from=kw.get('addr_start_from'),
             formula_x_str=kw.get('formulaX'),
             is_writable=is_writable,
-            desc=kw.get('sourceDesc'),
+            desc=kw.get('source_desc'),
         )
         return cls(**kwargs)
 

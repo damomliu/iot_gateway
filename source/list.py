@@ -3,7 +3,7 @@ import sqlite3
 import os.path
 from collections import Counter
 from .status import SourceStatus
-from model.Address import Address
+from model.address import Address
 
 
 class MirrorSourceList(list):
@@ -154,7 +154,7 @@ class AddressList(list):
                 raise ValueError('副檔名應為.csv or .db')
 
             for l in dict_list:
-                self.append(Address(**l))
+                self.append(Address.from_dict(l))
 
         except Exception as e:
             self.logger.warning(f'Invalid Source_come_from: {e}')
