@@ -12,7 +12,7 @@ class OpcuaConfig(BaseModel):
 
 class SourceConfig(BaseModel):
     address_path: str = Field(alias='address_path', default='./address.csv')
-    register_folder: str = Field(alias='address_path', default='./.register/')
+    register_folder: str = Field(alias='register_folder', default='./.register/')
     addr_start_from: int = Field(alias='addr_start_from', default=1)
     source_port: int = Field(alias='source_port', default=502)
     source_sid: int = Field(alias='source_sid', default=0x01)
@@ -30,15 +30,6 @@ class SourceConfig(BaseModel):
     opcua: OpcuaConfig = Field(alias='opcua', default=None)
 
 
-class MetaSingleTon(type):
-    _instances = {}
-
-    def __new__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super().__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-
 class Config(SourceConfig):
     @classmethod
     def from_sqllite(cls, sql_path):
@@ -49,15 +40,10 @@ class Config(SourceConfig):
         cur = con.cursor()
         cur.execute('select * from config')
         config_dict = dict(cur.fetchone())
-        cls.form_nest_sqlite(cur, config_dict, 'opcua', 'opcua')
+        config_dict['opcua'] = OpcuaConfig(**config_dict)
         cur.close()
         con.close()
         return cls(**config_dict)
-    @classmethod
-    def form_nest_sqlite(self,cur,st_dict,nd_table,nd_key):
-        cur.execute(f'select * from {nd_table} where id ={st_dict[nd_key]}')
-        opcua_dict = cur.fetchone()
-        st_dict[nd_key] = opcua_dict
 
     @classmethod
     def create(cls, config_path):
@@ -69,6 +55,14 @@ class Config(SourceConfig):
         else:
             raise ValueError('Config副檔名應為.json or .db')
         return config
+
+class MetaSingleTon(type):
+    _instances = {}
+
+    def __new__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
 if __name__ == '__main__':

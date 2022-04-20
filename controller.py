@@ -13,7 +13,7 @@ from source.list import SourceList
 from pymodbus_context import LinkedSlaveContext
 from model.config import Config
 
-__version__ = (1, 3, 1)
+__version__ = (1, 3, 3)
 
 class ModbusController:
 
