@@ -1,5 +1,9 @@
+import csv
+import sqlite3
+import os.path
 from collections import Counter
 from .status import SourceStatus
+from model.address import Address
 
 
 class MirrorSourceList(list):
@@ -78,7 +82,7 @@ class MirrorSourceList(list):
             else:
                 counter_dict[src_class] = Counter([src_status])
 
-        return {k: dict(v) for k,v in counter_dict.items()}
+        return {k: dict(v) for k, v in counter_dict.items()}
 
     @property
     def client_list(self) -> list:
@@ -104,6 +108,58 @@ class MirrorSourceList(list):
         return [dict(counter), mixed_dict]
 
 
+class AddressList(list):
+    def __init__(self, origin_path, logger):
+        super().__init__()
+        self.origin_path = origin_path
+        self.logger = logger
+        self.load_src_list()
+
+    def read_sqllite(self):
+        con = sqlite3.connect(self.origin_path)
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+        cur.execute('select * from address')
+        sqllite_list = []
+        for data in cur.fetchall():
+            sqllite_list.append(dict(data))
+        cur.close()
+        con.close()
+        return sqllite_list
+
+    def to_src_list(self):
+        source_list = []
+        for address in self:
+            try:
+                source_list.append(address.to_source())
+            except Exception as e:
+                self.logger.warning(f'Invalid source: {e} / {address}')
+
+        return source_list
+
+    def load_src_list(self):
+        """
+            model.Address: 將輸入的數據從 dict形式 轉變成 Address 物件 ，定義數據輸入的欄位型別，確保系統中 數據型別的一致性
+            source.AddressList:  處理 Address物件列表 ，將每筆 Address物件，依照條件轉變成相應的Source，確保後續系統操作時 Source物件格式 一致性
+            source.MirrorSourceList: 對於 Source物件列表進行驗證，確保 Source物件格式 正確性，以便於後續系統使用
+        """
+        ext = os.path.splitext(self.origin_path)[-1]
+        try:
+            if ext == '.csv':
+                with open(self.origin_path, 'r', encoding='utf-8-sig') as f:
+                    dict_list = list(csv.DictReader(f))[1:]
+            elif ext == '.db':
+                dict_list = self.read_sqllite()
+            else:
+                raise ValueError('副檔名應為.csv or .db')
+
+            for l in dict_list:
+                self.append(Address.from_dict(l))
+
+        except Exception as e:
+            self.logger.warning(f'Invalid Source_come_from: {e}')
+
+
 def _client_summary(source_list, expand_failed=True, expand_success=False):
     counter = Counter()
     success_list = []
@@ -114,7 +170,7 @@ def _client_summary(source_list, expand_failed=True, expand_success=False):
             failed_list.append(str(src))
         else:
             success_list.append(str(src))
-    summary = [f'{k} * {v}' for k,v in counter.items()]
+    summary = [f'{k} * {v}' for k, v in counter.items()]
     if expand_failed:
         summary.extend(failed_list)
     if expand_success:

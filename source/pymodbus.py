@@ -9,14 +9,14 @@ class PyModbusTcpSource(SourcePairBase):
     _default_port = None
 
     def __init__(
-        self, client, target, desc=None,
-        address: int = None,
-        slave_id: int = None,
-        point_type_str: str = None,
-        data_type_str: str = None,
-        addr_start_from=None,
-        formula_x_str: str = None,
-        is_writable: bool = False,
+            self, client, target, desc=None,
+            address: int = None,
+            slave_id: int = None,
+            point_type_str: str = None,
+            data_type_str: str = None,
+            addr_start_from=None,
+            formula_x_str: str = None,
+            is_writable: bool = False,
     ) -> None:
 
         super().__init__(client, target, desc)
@@ -50,8 +50,11 @@ class PyModbusTcpSource(SourcePairBase):
             return rep_str + f' : {self.target.repr_postfix}'
 
     @property
-    def address_from0(self): return self.address - self.addr_start_from
-    def __len__(self): return self.dataType.length
+    def address_from0(self):
+        return self.address - self.addr_start_from
+
+    def __len__(self):
+        return self.dataType.length
 
     @classmethod
     def FromDict(cls, is_writable=False, **kw):
@@ -59,23 +62,24 @@ class PyModbusTcpSource(SourcePairBase):
             '_default_slave_id',
             '_default_port',
         ]]), f'Need to setup default value for <{cls.__name__}>'
-
-        target = ModbusTarget.FromDict(**kw)
+        source_kw = kw['source']
+        target_kw = kw['target']
+        target = ModbusTarget.FromDict(**target_kw)
         client = PyModbusTcpClient(
-            ip=kw['SourceIP'],
-            port=int(_get(kw, 'SourcePort', cls._default_port)),
+            ip=source_kw['source_ip'],
+            port=int(_get(source_kw, 'source_port', cls._default_port)),
         )
         kwargs = _clean_dict(
             client=client,
             target=target,
-            address=int(kw['SourceAddress']),
-            slave_id=kw.get("SourceDeviceID"),
-            point_type_str=kw.get('SourcePointType'),
-            data_type_str=kw.get('SourceDataype'),
-            addr_start_from=kw.get('addr_start_from'),
-            formula_x_str=kw.get('FormulaX'),
+            address=int(source_kw['source_address']),
+            slave_id=source_kw.get("source_deviceID"),
+            point_type_str=source_kw.get('source_pointtype'),
+            data_type_str=source_kw.get('source_dataype'),
+            addr_start_from=source_kw.get('addr_start_from'),
+            formula_x_str=source_kw.get('formulaX'),
             is_writable=is_writable,
-            desc=kw.get('SourceDesc'),
+            desc=source_kw.get('source_desc'),
         )
         return cls(**kwargs)
 
@@ -155,17 +159,17 @@ class PyModbusTcpClient(ClientBase, ModbusTcpClient):
 class ModbusTarget(TargetBase):
     _default_pointtype_str = None
     _default_datatype_str = None
-    _default_abcd_str =None
+    _default_abcd_str = None
     _default_addr_start_from = None
 
     def __init__(
-        self,
-        address,
-        point_type_str,
-        data_type_str,
-        data_order,
-        addr_start_from=1,
-        desc=None
+            self,
+            address,
+            point_type_str,
+            data_type_str,
+            data_order,
+            addr_start_from=1,
+            desc=None
     ):
         self.address = int(address)
         self.pointType = PointType(point_type_str)
@@ -190,6 +194,7 @@ class ModbusTarget(TargetBase):
 
     @property
     def length(self): return self.dataType.length
+
     @property
     def address_from0(self): return self.address - self.addr_start_from
 
@@ -207,12 +212,11 @@ class ModbusTarget(TargetBase):
         ]]), f'Need to setup default value for <{__class__.__name__}>'
 
         kwargs = _clean_dict(
-            address=kw['TargetAddress'],
-            point_type_str=_get(kw, 'PointType', cls._default_pointtype_str),
-            data_type_str=_get(kw, 'DataType', cls._default_datatype_str),
-            data_order=EDataOrder[_get(kw, "ABCD", cls._default_abcd_str)],
-            addr_start_from=_get(kw, 'addr_start_from',
-                                 cls._default_addr_start_from),
-            desc=kw.get('TargetDesc'),
+            address=kw['target_address'],
+            point_type_str=_get(kw, 'point_type', cls._default_pointtype_str),
+            data_type_str=_get(kw, 'data_type', cls._default_datatype_str),
+            data_order=EDataOrder[_get(kw, "abcd", cls._default_abcd_str)],
+            addr_start_from=_get(kw, 'addr_start_from',cls._default_addr_start_from),
+            desc=kw.get('target_desc'),
         )
         return cls(**kwargs)

@@ -1,6 +1,6 @@
 from .point_type import PointType
 from .data_type import DataType, EDataOrder
-from .list import MirrorSourceList
+from .list import MirrorSourceList, AddressList
 
 from .status import SourceStatus
 

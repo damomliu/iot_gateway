@@ -14,7 +14,7 @@ class HslModbusTcpSource(SourceBase):
             slave_id: int = None,
             point_type_str: str = None,
             data_type_str: str = None,
-            addr_start_from = None,
+            addr_start_from=None,
             formula_x_str: str = None,
             is_writable: bool = False,
     ) -> None:
@@ -36,11 +36,11 @@ class HslModbusTcpSource(SourceBase):
 
     def _PreCheck(self):
         assert all([
-            self.ip.replace('.','').isdigit(),
+            self.ip.replace('.', '').isdigit(),
             isinstance(self.port, int),
             isinstance(self.address, int),
             isinstance(self.slave_id, int),
-            self.addr_start_from in [0,1],
+            self.addr_start_from in [0, 1],
         ])
 
     def _SetTrans(self):
@@ -62,7 +62,8 @@ class HslModbusTcpSource(SourceBase):
         return rep_str + f' : {self.target.repr_postfix}'
 
     @property
-    def address_from0(self): return self.address - self.addr_start_from
+    def address_from0(self):
+        return self.address - self.addr_start_from
 
     @classmethod
     def FromDict(cls, is_writable=False, **kw):
@@ -73,17 +74,17 @@ class HslModbusTcpSource(SourceBase):
 
         target = ModbusTarget.FromDict(**kw)
         kwargs = _clean_dict(
-            ip=kw['SourceIP'],
-            port=int(_get(kw, 'SourcePort', cls._default_port)),
-            address=int(kw['SourceAddress']),
+            ip=kw['source_ip'],
+            port=int(_get(kw, 'source_port', cls._default_port)),
+            address=int(kw['source_address']),
             target=target,
-            slave_id=kw.get("SourceDeviceID"),
-            point_type_str=kw.get('SourcePointType'),
-            data_type_str=kw.get('SourceDataype'),
+            slave_id=kw.get("source_deviceID"),
+            point_type_str=kw.get('source_pointtype'),
+            data_type_str=kw.get('source_dataype'),
             addr_start_from=kw.get('addr_start_from'),
-            formula_x_str=kw.get('FormulaX'),
+            formula_x_str=kw.get('formulaX'),
             is_writable=is_writable,
-            desc=kw.get('SourceDesc'),
+            desc=kw.get('source_desc'),
         )
         return cls(**kwargs)
 
@@ -92,11 +93,11 @@ class HslModbusTcpSource(SourceBase):
             res = self.client.ConnectServer()
             if res.IsSuccess:
                 self.is_connected = True
-                return 1,None
+                return 1, None
             else:
-                return 0,res.ToMessageShowString()
+                return 0, res.ToMessageShowString()
         else:
-            return 1,None
+            return 1, None
 
     def Disconnect(self):
         if self.is_connected:
@@ -148,9 +149,12 @@ class HslModbusTcpSource(SourceBase):
         return getattr(self.client.byteTransform, func_name[func_str])
 
     @property
-    def _ReadTrans(self): return self._ReadWriteTrans('r')
+    def _ReadTrans(self):
+        return self._ReadWriteTrans('r')
+
     @property
-    def _WriteTrans(self): return self._ReadWriteTrans('w')
+    def _WriteTrans(self):
+        return self._ReadWriteTrans('w')
 
     @property
     def _ReadLength(self):
@@ -168,10 +172,10 @@ class HslModbusTcpSource(SourceBase):
             else:
                 self.values = self.dataType.Encode(val)
 
-            return 1,self.values
+            return 1, self.values
         else:
             self.values = None
-            return 0,res.ToMessageShowString()
+            return 0, res.ToMessageShowString()
 
     def Write(self, values):
         if self.is_writable:
@@ -184,10 +188,10 @@ class HslModbusTcpSource(SourceBase):
                 res = self.client.Write(self.RequestStr('write_fx'), req_val)
                 if res.IsSuccess:
                     self.values = values
-                    return 1,None
+                    return 1, None
                 else:
-                    return 0,res.ToMessageShowString()
+                    return 0, res.ToMessageShowString()
             except Exception as e:
-                return 0,e
+                return 0, e
         else:
-            return 0,Exception('TargetNotWritable')
+            return 0, Exception('TargetNotWritable')
