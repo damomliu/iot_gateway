@@ -37,11 +37,14 @@ class Config(SourceConfig):
         """
         con = sqlite3.connect(sql_path)
         con.row_factory = sqlite3.Row
-        cur = con.cursor()
-        cur.execute('select * from config')
-        config_dict = dict(cur.fetchone())
-        config_dict['opcua'] = OpcuaConfig(**config_dict)
-        cur.close()
+        try:
+            with con:
+                cur = con.cursor()
+                cur.execute('select * from config')
+                config_dict = dict(cur.fetchone())
+                config_dict['opcua'] = OpcuaConfig(**config_dict)
+        except sqlite3.InternalError:
+            print('There is no config table')
         con.close()
         return cls(**config_dict)
 
