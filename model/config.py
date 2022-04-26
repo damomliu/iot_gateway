@@ -1,5 +1,6 @@
 import os
 import sqlite3
+
 from pydantic import BaseModel, Field
 
 
@@ -32,29 +33,25 @@ class SourceConfig(BaseModel):
 
 class Config(SourceConfig):
     @classmethod
-    def from_sqllite(cls, sql_path):
-        """ 根據 sqllite database設定檔獲取實例
+    def from_sqlite(cls, path):
+        """ 根據 sqlite database設定檔獲取實例
         """
-        con = sqlite3.connect(sql_path)
-        con.row_factory = sqlite3.Row
-        try:
-            with con:
-                cur = con.cursor()
-                cur.execute('select * from config')
-                config_dict = dict(cur.fetchone())
-                config_dict['opcua'] = OpcuaConfig(**config_dict)
-        except sqlite3.InternalError:
-            print('There is no config table')
-        con.close()
+        with sqlite3.connect(path) as con:
+            con.row_factory = sqlite3.Row
+            cur = con.cursor()
+            cur.execute('select * from config')
+            config_dict = dict(cur.fetchone())
+            config_dict['opcua'] = OpcuaConfig(**config_dict)
+            cur.close()
         return cls(**config_dict)
 
     @classmethod
-    def create(cls, config_path):
-        ext = os.path.splitext(config_path)[-1]
+    def create(cls, path):
+        ext = os.path.splitext(path)[-1]
         if ext == '.json':
-            config = Config.parse_file(config_path)
+            config = cls.parse_file(path)
         elif ext == '.db':
-            config = Config.from_sqllite(config_path)
+            config = cls.from_sqlite(path)
         else:
             raise ValueError('Config副檔名應為.json or .db')
         return config
@@ -69,5 +66,5 @@ class MetaSingleTon(type):
 
 
 if __name__ == '__main__':
-    res_sql = Config.from_sqllite('../test.db').dict()
+    res_sql = Config.from_sqlite('../test.db').dict()
     print('sql:', res_sql)

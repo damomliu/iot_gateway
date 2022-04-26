@@ -1,7 +1,5 @@
 import json
-import csv
 import time
-import os.path
 from pathlib import Path
 from threading import Thread, Event
 from logger import OneLogger
@@ -15,8 +13,8 @@ from model.config import Config
 
 __version__ = (1, 3, 3)
 
-class ModbusController:
 
+class ModbusController:
     __version__ = __version__
 
     def __init__(self,
@@ -99,7 +97,6 @@ class ModbusController:
         with open(config_path, 'r') as f:
             config_dict = json.load(f)
         self._SetConfig(**config_dict)
-
 
     def _SetSources(self):
         ModbusTarget._default_pointtype_str = self._pointtype_str
