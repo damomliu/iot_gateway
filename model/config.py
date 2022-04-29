@@ -42,7 +42,6 @@ class Config(SourceConfig):
             cur.execute('select * from config')
             config_dict = dict(cur.fetchone())
             config_dict['opcua'] = OpcuaConfig(**config_dict)
-            cur.close()
         return cls(**config_dict)
 
     @classmethod
@@ -66,5 +65,7 @@ class MetaSingleTon(type):
 
 
 if __name__ == '__main__':
-    res_sql = Config.from_sqlite('../test.db').dict()
+    res_sql = Config.from_sqlite('C:\\Users\\u1021\\Desktop\\Work\\iNeuronsControllerPy\\config\\test.db')
     print('sql:', res_sql)
+    print('server_port:', res_sql.server_port)
+

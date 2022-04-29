@@ -2,7 +2,7 @@ import json
 import time
 from pathlib import Path
 from threading import Thread, Event
-from logger import OneLogger
+import logging
 
 import factory
 from source import ModbusTarget
@@ -18,19 +18,20 @@ class ModbusController:
     __version__ = __version__
 
     def __init__(self,
+                 config: Config,
                  logger=None,
                  verbose=False,
                  mirror_mode: str = factory.DEFAULT_MIRROR_MODE,
                  server_mode: str = factory.DEFAULT_SERVER_MODE,
-                 **kw,
                  ):
         self.verbose = verbose
+        self.config = config
         self._SetLogger(logger)
-        self._SetConfig(**kw)
         self._SetSources()
+        self._server_sid = int(self.config.server_sid)
 
         self.mirror = factory.MIRROR[mirror_mode](
-            src_list=SourceList(self._address_path, self.logger),
+            src_list=SourceList(Path(self.config.address_path), self.logger),
             logger=self.logger,
         )
         self.context = LinkedSlaveContext.ServerContext(
@@ -39,8 +40,8 @@ class ModbusController:
             single_slave_mode=True,
         )
         self.server = factory.SERVER[server_mode](
-            host=self._server_host,
-            port=self._server_port,
+            host=self.config.server_host,
+            port=int(self.config.server_port),
             logger=self.logger,
         )
         self.server.Setup(self.context, allow_reuse_address=True)
@@ -52,65 +53,33 @@ class ModbusController:
 
     def _SetLogger(self, logger):
         if logger is None:
-            logger = OneLogger(
-                __class__.__name__,
-                level_str='info',
-            )
+            logger = logging
         self.logger = logger
-
-    def _SetConfig(self, **kw):
-        self._address_path = Path(kw['address_path'])
-        self._addr_start_from = kw['addr_start_from']
-        self._register_folder = Path(kw['register_folder'])
-        self._source_port = int(kw['source_port'])
-        self._source_sid = int(kw['source_sid'])
-        self._pointtype_str = kw['pointtype_str']
-        self._datatype_str = kw['datatype_str']
-        self._abcd_str = kw['abcd_str']
-        self._server_host = kw['server_host']
-        self._server_port = int(kw['server_port'])
-        self._server_sid = int(kw['server_sid'])
-        self._server_null_value = kw['server_null_value']
-        self._mirror_refresh_sec = float(kw['mirror_refresh_sec'])
-        self._mirror_retry_sec = int(kw['mirror_retry_sec'])
-        self._readwrite_retry_sec = int(kw['readwrite_retry_sec'])
-        self._shutdown_delay_sec = int(kw['shutdown_delay_sec'])
 
     def _PreCheck(self):
         assert all([
-            self._addr_start_from in [0, 1],
-            self._server_host.replace('.', '').isdigit(),
+            self.config.addr_start_from in [0, 1],
+            self.config.server_host.replace('.', '').isdigit(),
         ])
 
     @classmethod
     def from_config(cls, config_path, logger):
-        config_dict = Config.create(config_path).dict()
-        return cls(logger, **config_dict)
-
-    @classmethod
-    def FromConfigFile(cls, config_path, *args, **kw):
-        with open(config_path, 'r') as f:
-            config_dict = json.load(f)
-        return cls(*args, **kw, **config_dict)
-
-    def LoadConfig(self, config_path):
-        with open(config_path, 'r') as f:
-            config_dict = json.load(f)
-        self._SetConfig(**config_dict)
+        config = Config.create(config_path)
+        return cls(config=config, logger=logger)
 
     def _SetSources(self):
-        ModbusTarget._default_pointtype_str = self._pointtype_str
-        ModbusTarget._default_datatype_str = self._datatype_str
-        ModbusTarget._default_abcd_str = self._abcd_str
-        ModbusTarget._default_addr_start_from = self._addr_start_from
+        ModbusTarget._default_pointtype_str = self.config.pointtype_str
+        ModbusTarget._default_datatype_str = self.config.datatype_str
+        ModbusTarget._default_abcd_str = self.config.abcd_str
+        ModbusTarget._default_addr_start_from = self.config.addr_start_from
 
-        PyModbusTcpSource._default_port = self._source_port
-        PyModbusTcpSource._default_slave_id = self._source_sid
+        PyModbusTcpSource._default_port = int(self.config.source_port)
+        PyModbusTcpSource._default_slave_id = int(self.config.source_sid)
 
-        HslModbusTcpSource._default_port = self._source_port
-        HslModbusTcpSource._default_slave_id = self._source_sid
+        HslModbusTcpSource._default_port = int(self.config.source_port)
+        HslModbusTcpSource._default_slave_id = int(self.config.source_sid)
 
-        JsonSource._default_folder = Path(self._register_folder)
+        JsonSource._default_folder = Path(self.config.register_folder)
 
     def Start(self):
         self.__runserver_request = False
@@ -143,8 +112,8 @@ class ModbusController:
             self.__shutdownEvent.set()
 
     def Stop(self):
-        for i in range(self._shutdown_delay_sec):
-            left_sec = self._shutdown_delay_sec - i
+        for i in range(int(self.config.shutdown_delay_sec)):
+            left_sec = int(self.config.shutdown_delay_sec) - i
             time.sleep(1)
             print(f'<{left_sec}>')
 
@@ -163,7 +132,7 @@ class ModbusController:
             self.Stop()
 
         while True:
-            time.sleep(self._mirror_retry_sec)
+            time.sleep(int(self.config.mirror_retry_sec))
             try:
                 self.mirror.connect_retry()
             except Exception as e:
@@ -179,7 +148,7 @@ class ModbusController:
             try:
                 self.mirror.Read()
                 self.WriteContext()
-                time.sleep(self._mirror_refresh_sec)
+                time.sleep(float(self.config.mirror_refresh_sec))
                 if _tag:
                     _tag = False
                     self.__runserver_request = True
@@ -197,7 +166,7 @@ class ModbusController:
             except Exception as e:
                 self.logger.error(f"(Readwrite-Loop) error: {e}")
                 self.logger.info('(Radwrite-Loop) pausing...')
-                time.sleep(self._readwrite_retry_sec)
+                time.sleep(int(self.config.readwrite_retry_sec))
                 self.logger.info('(Radwrite-Loop) resumed')
 
     def _readfail_recover_loop(self):
@@ -208,13 +177,13 @@ class ModbusController:
             except Exception as e:
                 self.logger.error(f"(Readfail-Recover-Loop) error: {e}")
             finally:
-                time.sleep(self._readwrite_retry_sec)
+                time.sleep(int(self.config.readwrite_retry_sec))
 
     def WriteContext(self):
         for src in self.mirror.src_list:
             new_val = src.values
             if new_val is None:
-                new_val = src.dataType.Encode(self._server_null_value)
+                new_val = src.dataType.Encode(self.config.server_null_value)
 
             else:
                 _encoded = src.dataType.Decode(new_val)
