@@ -1,0 +1,3 @@
+﻿SourceProtocol,SourceIP,SourcePort,SourceDeviceID,SourcePointType,SourceAddress,SourceDataype,TargetAddress,DataType,FormulaX,TargetDesc,SourceDesc
+---,---,---,---,---,---,---,---,---,---,---,---
+modbus_tcp1,127.0.0.1,,1,hr,1,,3,,3.14*X,,

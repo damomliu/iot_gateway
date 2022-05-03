@@ -1,0 +1,12 @@
+{
+    "address_path": "./address.csv",
+    "register_folder": "./.register/",
+
+    "source_port": 502,
+    "pointtype_str": "hr",
+    "datatype_str": "float32",
+    "abcd_str": "ABCD",
+
+    "server_host": "127.0.0.1",
+    "server_port": 504
+}
