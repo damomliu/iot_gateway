@@ -1,14 +1,8 @@
-# iNeuronsControllerPy
+# IIoT Gateway 工業物聯網匣道器
 
-## 開發文件
-  - [Google Doc](https://docs.google.com/document/d/1HhIDl97UI30qQpnuf0UWvTpVVOCZouWq4llGl8MKFRI/edit?usp=sharing)
+## 功能說明
 
-## 分支說明
-  - develop/1.x : 原 develop 分支
-  - develop/2.x : 由 `1.3.2` 切出、Controller 專案打包
-  - fn-Controller 所有 controller 功能都要合併到此 `./controller.py`
-    - test-Controller 以 pytest 針對 fn_Controller 做單元測試
-    - uml 類別圖、功能說明示意圖
-    - fn-ControllerPackage `./__init__.py`
-      - fn-ControllerWebApp `ctrl_app/controller/__init__.py` 
-        - web Django
+  - V1.0 *(public)*
+    - 解決工廠現場硬體 gateway 常遇超過頻寬上限，並統一各廠牌 sensor 格式，以 Modbus Master 角色提供實時數據供後端其他服務取用。
+  - V2.0 *(private)*
+    - 提供更多種通訊協定 (MQTT/OPCUA)，並將實時數據快取至 REDIS
